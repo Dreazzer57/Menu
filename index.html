@@ -338,11 +338,12 @@ td input:focus{border-color:var(--green);outline:none}
    kcal : [👨, 👩]. Mêmes repas pour les deux = courses simples.
    ========================================================== */
 const MEALS = {
-  /* Petit-déjeuner 👨 : toujours identique. 👩 : varie chaque jour (rotation ci-dessous). */
-  pdj1:{elle:{nom:"Bowl fromage blanc & banane",ing:[["Fromage blanc","150 g"],["Banane","½"],["Flocons d'avoine","30 g"],["Cannelle","1 pincée"]],kcal:300},kcal:[330,300],tps:"5 min"},
-  pdj2:{elle:{nom:"Fromage blanc, pomme & avoine",ing:[["Fromage blanc","150 g"],["Pomme","1"],["Flocons d'avoine","25 g"]],kcal:280},kcal:[330,280],tps:"5 min"},
+  /* Petit-déjeuner 👨 : toujours identique. 👩 : varie chaque jour, sans flocons
+     d'avoine, avec du salé (dont des œufs) certains jours (rotation ci-dessous). */
+  pdj1:{elle:{nom:"Fromage blanc, banane & miel",ing:[["Fromage blanc","150 g"],["Banane","1"],["Miel","1 c. à c."],["Cannelle","1 pincée"]],kcal:250},kcal:[330,250],tps:"3 min"},
+  pdj2:{elle:{nom:"Œufs & tartine 🍳🧂",ing:[["Œufs (omelette, au plat ou brouillés)","2"],["Pain complet","1 tranche"],["Tomate","1 petite"]],kcal:270},kcal:[330,270],tps:"5 min"},
   pdj3:{elle:{nom:"Tartines salées 🧂",ing:[["Pain complet","2 tranches"],["Fromage frais (carré frais)","2"],["Jambon de dinde","1 tranche"],["Concombre","quelques rondelles"]],kcal:300},kcal:[330,300],tps:"5 min"},
-  pdj4:{elle:{nom:"Petits suisses & kiwis",ing:[["Petits suisses","2"],["Kiwis","2"],["Flocons d'avoine","25 g"]],kcal:280},kcal:[330,280],tps:"5 min"},
+  pdj4:{elle:{nom:"Petits suisses, kiwis & tartine",ing:[["Petits suisses","2"],["Kiwis","2"],["Pain complet","1 tranche"],["Confiture","1 c. à c."]],kcal:260},kcal:[330,260],tps:"3 min"},
 
   /* --- Collations --- */
   col_pomme:{nom:"Pomme + fromage blanc",ing:[["Pomme","1"],["Fromage blanc","100 g"]],kcal:[140,140],tps:"2 min"},
@@ -354,6 +355,8 @@ const MEALS = {
     kcal:[310,140],tps:"3 min"},
 
   /* --- Déjeuners --- */
+  /* Variante hebdo : même assiette, mais 👩 remplace le poulet par du colin */
+  l_riz_mixte:{nom:"Riz & brocolis — poulet 👨 · colin 🐟 👩",ing:[["Protéine","blanc de poulet 150 g","colin surgelé 130 g"],["Riz (poids cru)","90 g","70 g"],["Brocolis","250 g","200 g"],["Huile d'olive","1 c. à s.","1 c. à c."]],kcal:[660,470],tps:"10 min*"},
   l_poulet_riz:{nom:"Poulet, riz & brocolis",ing:[["Blanc de poulet","150 g","120 g"],["Riz (poids cru)","90 g","70 g"],["Brocolis","250 g","200 g"],["Huile d'olive","1 c. à s.","1 c. à c."]],kcal:[660,520],tps:"10 min*"},
   l_pates_thon:{nom:"Pâtes complètes au thon",ing:[["Pâtes complètes (cru)","90 g","70 g"],["Thon en boîte","1 boîte 140 g","1 boîte 100 g"],["Sauce tomate","100 g"],["Oignon","½"]],kcal:[650,520],tps:"10 min*"},
   l_steak_pdt:{nom:"Steak haché, pommes de terre & haricots verts",ing:[["Steak haché 5 %","125 g","100 g"],["Pommes de terre","300 g","250 g"],["Haricots verts","200 g"],["Beurre","1 noisette"]],kcal:[630,510],tps:"10 min*"},
@@ -395,7 +398,7 @@ function jour(dej,col,din){return ["pdj",dej,col,din];}
 const SEMAINES = [
   /* ---- SEMAINE 1 ---- */
   [
-    jour("l_poulet_riz","col_pomme","d_salade_thon"),
+    jour("l_riz_mixte","col_pomme","d_salade_thon"),
     jour("l_pates_thon","col_hand","dh_riz_thon"),
     jour("l_steak_pdt","col_pomme","d_poulet_courg"),
     jour("l_riz_dinde","col_hand","dh_dinde"),
@@ -408,14 +411,14 @@ const SEMAINES = [
     jour("l_pates_poulet","col_pomme","d_riz_thon"),
     jour("l_steak_pdt","col_hand","dh_poulet_courg"),
     jour("l_dinde_lentilles","col_pomme","d_jambon_puree"),
-    jour("l_poulet_riz","col_hand","dh_dinde"),
+    jour("l_riz_mixte","col_hand","dh_dinde"),
     jour("l_colin","col_kiwi","d_poulet_courg"),
     jour("l_plaisir","col_pomme","d_dinde_carottes"),
     jour("l_salade_pdt","col_kiwi","d_pates_jambon")
   ],
   /* ---- SEMAINE 3 (variante de la 1) ---- */
   [
-    jour("l_poulet_riz","col_kiwi","d_riz_thon"),
+    jour("l_riz_mixte","col_kiwi","d_riz_thon"),
     jour("l_riz_dinde","col_hand","dh_dinde"),
     jour("l_steak_pdt","col_pomme","d_jambon_puree"),
     jour("l_pates_thon","col_hand","dh_riz_thon"),
@@ -427,7 +430,7 @@ const SEMAINES = [
   [
     jour("l_riz_dinde","col_pomme","d_salade_thon"),
     jour("l_pates_poulet","col_hand","dh_riz_thon"),
-    jour("l_poulet_riz","col_kiwi","d_jambon_puree"),
+    jour("l_riz_mixte","col_kiwi","d_jambon_puree"),
     jour("l_steak_pdt","col_hand","dh_poulet_courg"),
     jour("l_colin","col_pomme","d_riz_thon"),
     jour("l_plaisir","col_kiwi","d_dinde_carottes"),
@@ -436,9 +439,10 @@ const SEMAINES = [
 ];
 const HANDBALL = [1,3]; /* mardi & jeudi */
 
-/* Rotation des petits-déjeuners 👩 (Lun → Dim) : salé le mercredi et le samedi.
-   Elle peut remplacer n'importe quel jour par la version salée si elle préfère. */
-const PDJ_ROT = ["pdj1","pdj2","pdj3","pdj4","pdj1","pdj3","pdj2"];
+/* Rotation des petits-déjeuners 👩 (Lun → Dim) :
+   œufs le mardi et le vendredi, tartines salées le mercredi et le samedi.
+   Elle peut échanger les jours entre eux selon l'envie. */
+const PDJ_ROT = ["pdj1","pdj2","pdj3","pdj4","pdj2","pdj3","pdj1"];
 SEMAINES.forEach(week => week.forEach((day,d) => { day[0] = PDJ_ROT[d]; }));
 
 /* ==========================================================
@@ -472,22 +476,24 @@ const BASE_COURSES = {
     ["Lentilles vertes","≈ 250 g"],
     ["Thon en boîte","4 × 140 g + 5 × 100 g"],
     ["Sauce tomate","3 briques"],
-    ["Flocons d'avoine (1 kg)","≈ 600 g utilisés"],
-    ["Pain complet","1 (petit-déj salé 👩)"],
-    ["Café, huile d'olive, moutarde","fond de placard"]
+    ["Flocons d'avoine (1 kg)","≈ 450 g (👨 uniquement)"],
+    ["Pain complet","1 à 2 (petits-déj 👩)"],
+    ["Café, huile d'olive, moutarde, miel, confiture","fond de placard"]
   ],
   "Crèmerie":[
     ["Petits suisses","≈ 16 (1 pack de 12 + 4)"],
+    ["Œufs","6 (petits-déj 👩)"],
     ["Fromage frais (type carré frais)","4 portions"],
     ["Fromage blanc","2 gros pots de 1 kg"]
   ],
   "Surgelés":[
-    ["Haricots verts surgelés","1,5 kg"]
+    ["Haricots verts surgelés","1,5 kg"],
+    ["Colin surgelé","≈ 150 g (déjeuner poisson 👩)"]
   ]
 };
 function courses(extraSurgeles){
   const c = JSON.parse(JSON.stringify(BASE_COURSES));
-  if(extraSurgeles) c["Surgelés"].push(["Colin surgelé","≈ 550 g"]);
+  if(extraSurgeles) c["Surgelés"][1] = ["Colin surgelé","≈ 450 g (déj poisson 👩 + déj colin à 2)"];
   return c;
 }
 const LISTES = [courses(false),courses(true),courses(false),courses(true)];
@@ -531,11 +537,7 @@ try{
   }
 }catch(e){ /* localStorage indisponible : le site marche quand même, sans sauvegarde */ }
 
-/* Pont vers le module Firebase tout en bas du fichier :
-   - getState/setState permettent au module (qui a sa propre portée)
-     de lire/remplacer l'état partagé
-   - onSave est rempli par le module une fois connecté : chaque save()
-     pousse alors aussi la donnée vers Firestore, en plus du cache local */
+/* Pont vers le module Firebase tout en bas du fichier */
 window.getState = () => state;
 window.setState = (s) => { state = s; };
 window.onSave = null;
@@ -589,7 +591,8 @@ function pageAccueil(){
   <section class="card">
     <h2><span class="dot">●</span> Comment ça marche</h2>
     <p class="muted">
-      • <b>Petit-déjeuner 👨</b> : toujours identique (café, 2 petits suisses, 60 g d'avoine). <b>👩</b> : il varie chaque jour, avec une version salée le mercredi et le samedi — interchangeable selon l'envie.<br>
+      • <b>Petit-déjeuner 👨</b> : toujours identique (café, 2 petits suisses, 60 g d'avoine). <b>👩</b> : il varie chaque jour, sans flocons d'avoine — œufs 🍳 le mardi et le vendredi, tartines salées le mercredi et le samedi, sucré les autres jours. Les jours sont interchangeables.<br>
+      • <b>1 déjeuner par semaine 🐟</b> : <b>👩</b> remplace le poulet par du colin (assiette riz-brocolis) — <b>👨</b> garde le poulet, rien ne change pour lui.<br>
       • <b>👩 ne mange pas de porc</b> : partout où il y a du jambon, elle prend du jambon de dinde.<br>
       • <b>Mardi & jeudi</b> (handball 👨, en bleu) : <b>👨</b> collation renforcée vers 16 h puis dîner léger (yaourt si faim). <b>👩</b> ne fait pas de hand : collation normale et <b>vrai dîner</b> le soir.<br>
       • <b>Samedi midi</b> : repas plaisir 🎉 pour les deux — totalement libre.<br>
@@ -818,6 +821,7 @@ window.startApp = function(){
     if(body) body.style.maxHeight = body.scrollHeight + "px";
   });
 };
+
 /* ==========================================================
    INTERACTIONS
    ========================================================== */
@@ -979,27 +983,22 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyASHeya2o-lZsheKstjwevjv2H4LuvhJQo",
-  authDomain: "menuraph-a3311.firebaseapp.com",
-  projectId: "menuraph-a3311",
-  storageBucket: "menuraph-a3311.firebasestorage.app",
-  messagingSenderId: "1050675498232",
-  appId: "1:1050675498232:web:20a7c4c8c5692f6c3fbf0d",
-  measurementId: "G-1900FRX53H"
+  apiKey: "COLLE_TA_CLE_ICI",
+  authDomain: "TON-PROJET.firebaseapp.com",
+  projectId: "TON-PROJET",
+  storageBucket: "TON-PROJET.appspot.com",
+  messagingSenderId: "...",
+  appId: "..."
 };
 
 const loginGate = document.getElementById("loginGate");
 const loginForm = document.getElementById("loginForm");
 const loginStatus = document.getElementById("loginStatus");
 
-/* Identifiant de session, pour ignorer les mises à jour qu'on vient
-   soi-même d'envoyer (évite de se re-rafraîchir soi-même en boucle) */
 const sessionId = Math.random().toString(36).slice(2);
 let firestoreReady = false;
 
 function demarrerEnModeSecours(msg){
-  /* Si Firebase n'est pas configuré / indisponible, le site continue
-     de fonctionner en solo avec la sauvegarde locale (comme avant). */
   loginGate.style.display = "none";
   if(msg) console.warn(msg);
   window.startApp();
@@ -1035,26 +1034,22 @@ try{
     if(!firestoreReady){
       firestoreReady = true;
 
-      /* Pousse chaque save() local vers Firestore, en plus du cache local */
       window.onSave = (s)=>{
         setDoc(ref, Object.assign({}, s, {_by: sessionId})).catch(console.error);
       };
 
-      /* Premier chargement */
       const snap = await getDoc(ref);
       if(snap.exists()){
         window.setState(snap.data());
       }else{
-        /* Rien en ligne : on initialise avec l'état local actuel */
         await setDoc(ref, Object.assign({}, window.getState(), {_by: sessionId}));
       }
       window.startApp();
 
-      /* Écoute les changements faits par l'autre personne, en temps réel */
       onSnapshot(ref, (snap)=>{
         if(!snap.exists()) return;
         const data = snap.data();
-        if(data._by === sessionId) return; /* c'est notre propre écriture */
+        if(data._by === sessionId) return;
         window.setState(data);
         window.startApp();
       });
