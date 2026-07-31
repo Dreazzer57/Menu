@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon Plan Alimentaire — 4 semaines</title>
+<style>
+/* ==========================================================
+   1. VARIABLES & RESET
+   ========================================================== */
+:root{
+  --bg:#0b1020;            /* fond très sombre bleuté */
+  --bg-soft:#111832;       /* fond des cartes */
+  --bg-softer:#182142;     /* survol / éléments internes */
+  --border:#232e55;
+  --txt:#e8ecf8;
+  --txt-dim:#98a3c7;
+  --green:#3ddc84;         /* progression / validé */
+  --green-dark:#123626;
+  --blue:#5b9dff;          /* jours handball */
+  --blue-dark:#12244a;
+  --orange:#ffb454;        /* avertissements */
+  --orange-dark:#3a2a10;
+  --radius:16px;
+  --shadow:0 8px 24px rgba(0,0,0,.45);
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(1000px 500px at 80% -10%,#16224a55,transparent),
+                   radial-gradient(800px 400px at -10% 30%,#0f2b2455,transparent);
+  color:var(--txt);
+  font-family:var(--font);
+  line-height:1.55;
+  min-height:100vh;
+  padding-bottom:80px;
+}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+
+/* ==========================================================
+   2. EN-TÊTE & NAVIGATION
+   ========================================================== */
+header{
+  padding:28px 16px 8px;
+  text-align:center;
+}
+header h1{
+  font-size:clamp(1.5rem,4vw,2.3rem);
+  font-weight:800;
+  letter-spacing:-.5px;
+}
+header h1 span{color:var(--green)}
+header p{color:var(--txt-dim);font-size:.95rem;margin-top:4px}
+
+nav{
+  position:sticky;top:0;z-index:50;
+  display:flex;gap:8px;overflow-x:auto;
+  padding:12px 16px;
+  background:rgba(11,16,32,.85);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  scrollbar-width:none;
+}
+nav::-webkit-scrollbar{display:none}
+nav button{
+  flex:0 0 auto;
+  background:var(--bg-soft);
+  color:var(--txt-dim);
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:8px 16px;
+  font-size:.9rem;font-weight:600;
+  transition:all .25s ease;
+}
+nav button:hover{color:var(--txt);border-color:var(--green)}
+nav button.active{
+  background:var(--green);color:#04120a;border-color:var(--green);
+  box-shadow:0 0 18px #3ddc8455;
+}
+
+main{max-width:900px;margin:0 auto;padding:20px 16px}
+.page{display:none;animation:fadeIn .35s ease}
+.page.visible{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ==========================================================
+   3. CARTES GÉNÉRIQUES
+   ========================================================== */
+.card{
+  background:var(--bg-soft);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px;
+  margin-bottom:16px;
+}
+.card h2{font-size:1.25rem;margin-bottom:12px}
+.card h2 .dot{color:var(--green)}
+.muted{color:var(--txt-dim);font-size:.9rem}
+
+/* Grille de stats (accueil) */
+.stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:12px;margin-top:8px;
+}
+.stat{
+  background:var(--bg-softer);
+  border:1px solid var(--border);
+  border-radius:12px;padding:14px;text-align:center;
+  transition:transform .2s ease;
+}
+.stat:hover{transform:translateY(-3px)}
+.stat b{display:block;font-size:1.5rem;color:var(--green)}
+.stat.blue b{color:var(--blue)}
+.stat small{color:var(--txt-dim)}
+
+/* Avertissement */
+.warn{
+  background:var(--orange-dark);
+  border:1px solid var(--orange);
+  border-radius:12px;
+  color:var(--orange);
+  padding:12px 14px;font-size:.9rem;
+  margin-top:12px;
+  display:flex;gap:10px;align-items:flex-start;
+}
+
+/* Badge handball */
+.badge-hb{
+  display:inline-block;background:var(--blue-dark);color:var(--blue);
+  border:1px solid var(--blue);border-radius:999px;
+  font-size:.72rem;font-weight:700;padding:2px 10px;margin-left:8px;
+  vertical-align:middle;
+}
+
+/* ==========================================================
+   4. BARRES DE PROGRESSION
+   ========================================================== */
+.progress{
+  background:var(--bg-softer);
+  border-radius:999px;height:12px;overflow:hidden;
+  border:1px solid var(--border);
+}
+.progress > div{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,#1fae62,var(--green));
+  border-radius:999px;
+  transition:width .5s cubic-bezier(.4,0,.2,1);
+}
+.progress-label{
+  display:flex;justify-content:space-between;
+  font-size:.82rem;color:var(--txt-dim);margin:10px 0 6px;
+}
+.celebrate{
+  display:none;text-align:center;font-weight:700;
+  color:var(--green);margin-top:10px;
+  animation:pop .5s ease;
+}
+.celebrate.on{display:block}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+
+/* ==========================================================
+   5. ACCORDÉON JOURS
+   ========================================================== */
+.day{
+  background:var(--bg-soft);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  margin-bottom:12px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  transition:border-color .3s;
+}
+.day.handball{border-color:var(--blue)}
+.day.done{border-color:var(--green)}
+.day-head{
+  width:100%;display:flex;align-items:center;gap:12px;
+  background:transparent;border:none;color:var(--txt);
+  padding:16px;text-align:left;
+}
+.day-head:hover{background:var(--bg-softer)}
+.day-head .day-name{font-weight:700;font-size:1.05rem;flex:1}
+.day-head .kcal{font-size:.8rem;color:var(--txt-dim);white-space:nowrap}
+.day-head .chev{transition:transform .3s;color:var(--txt-dim)}
+.day.open .chev{transform:rotate(180deg)}
+.day-body{
+  max-height:0;overflow:hidden;
+  transition:max-height .45s ease;
+  padding:0 14px;
+}
+.day.open .day-body{padding-bottom:14px}
+.day .progress{height:8px;margin:0 16px 0}
+.day .day-prog-wrap{padding:0 16px 14px}
+.day-msg{font-size:.85rem;font-weight:700;color:var(--green);padding:0 16px 12px;display:none}
+.day-msg.on{display:block;animation:pop .4s ease}
+
+/* ==========================================================
+   6. REPAS
+   ========================================================== */
+.meal{
+  display:flex;gap:12px;align-items:flex-start;
+  background:var(--bg-softer);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;margin-top:10px;
+  transition:background .3s,border-color .3s;
+}
+.meal.checked{
+  background:var(--green-dark);
+  border-color:var(--green);
+}
+.meal input[type=checkbox]{
+  appearance:none;-webkit-appearance:none;
+  width:22px;height:22px;flex:0 0 22px;margin-top:2px;
+  border:2px solid var(--txt-dim);border-radius:7px;
+  background:transparent;cursor:pointer;position:relative;
+  transition:all .2s;
+}
+.meal input[type=checkbox]:checked{
+  background:var(--green);border-color:var(--green);
+}
+.meal input[type=checkbox]:checked::after{
+  content:"✓";position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  color:#04120a;font-weight:900;font-size:.9rem;
+}
+.meal-info{flex:1}
+.meal-type{
+  font-size:.72rem;text-transform:uppercase;letter-spacing:1px;
+  color:var(--txt-dim);font-weight:700;
+}
+.meal.checked .meal-type{color:var(--green)}
+.meal-name{font-weight:700;margin:2px 0 4px}
+.meal ul{list-style:none;font-size:.86rem;color:var(--txt-dim)}
+.meal ul li::before{content:"– "}
+.meal-meta{
+  display:flex;gap:12px;margin-top:6px;
+  font-size:.78rem;color:var(--txt-dim);
+}
+.meal-meta span{background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:2px 10px}
+.meal.checked .meal-meta span{border-color:var(--green);color:var(--green)}
+
+/* Petit-déjeuner : deux versions côte à côte */
+.pdj-split{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.pdj-split > div{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px}
+.pdj-split b{font-size:.86rem}
+@media (max-width:600px){.pdj-split{grid-template-columns:1fr}}
+
+/* ==========================================================
+   7. LISTES DE COURSES & TABLEAUX
+   ========================================================== */
+.rayon h3{
+  color:var(--green);font-size:.95rem;
+  margin:14px 0 6px;text-transform:uppercase;letter-spacing:1px;
+}
+.rayon ul{list-style:none}
+.rayon li{
+  padding:6px 0;border-bottom:1px dashed var(--border);
+  font-size:.92rem;display:flex;justify-content:space-between;gap:10px;
+}
+.rayon li span:last-child{color:var(--txt-dim);white-space:nowrap}
+
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--txt-dim);font-size:.78rem;text-transform:uppercase;letter-spacing:1px}
+td input[type=number],td input[type=text]{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;color:var(--txt);padding:8px;font-family:inherit;
+}
+td input:focus{border-color:var(--green);outline:none}
+
+/* Batch cooking : étapes */
+.step{
+  display:flex;gap:14px;margin-top:14px;align-items:flex-start;
+}
+.step .num{
+  flex:0 0 34px;height:34px;border-radius:50%;
+  background:var(--green-dark);color:var(--green);
+  border:1px solid var(--green);
+  display:flex;align-items:center;justify-content:center;font-weight:800;
+}
+.step b{display:block}
+.step small{color:var(--txt-dim)}
+
+/* Boutons d'action (sauvegarde) */
+.btn{
+  background:var(--bg-softer);color:var(--txt);
+  border:1px solid var(--border);border-radius:10px;
+  padding:10px 16px;font-weight:600;font-size:.9rem;
+  margin:6px 8px 0 0;transition:all .2s;
+}
+.btn:hover{border-color:var(--green);color:var(--green)}
+.btn.primary{background:var(--green);color:#04120a;border-color:var(--green)}
+
+/* ==========================================================
+   8. RESPONSIVE & ACCESSIBILITÉ
+   ========================================================== */
+@media (max-width:600px){
+  .card{padding:16px}
+  .meal{flex-wrap:wrap}
+  .day-head{padding:14px 12px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Mon Plan <span>Alimentaire</span></h1>
+  <p>4 semaines · simple · économique · 10 min par repas</p>
+</header>
+
+<nav id="nav"></nav>
+
+<main id="main"></main>
+
+<script>
+/* ==========================================================
+   DONNÉES — Base des repas (2 personnes)
+   Chaque ingrédient : [nom, quantité 👨, quantité 👩]
+   Si la quantité est identique pour les deux, un seul élément.
+   kcal : [👨, 👩]. Mêmes repas pour les deux = courses simples.
+   ========================================================== */
+const MEALS = {
+  /* Petit-déjeuner 👨 : toujours identique. 👩 : varie chaque jour (rotation ci-dessous). */
+  pdj1:{elle:{nom:"Bowl fromage blanc & banane",ing:[["Fromage blanc","150 g"],["Banane","½"],["Flocons d'avoine","30 g"],["Cannelle","1 pincée"]],kcal:300},kcal:[330,300],tps:"5 min"},
+  pdj2:{elle:{nom:"Fromage blanc, pomme & avoine",ing:[["Fromage blanc","150 g"],["Pomme","1"],["Flocons d'avoine","25 g"]],kcal:280},kcal:[330,280],tps:"5 min"},
+  pdj3:{elle:{nom:"Tartines salées 🧂",ing:[["Pain complet","2 tranches"],["Fromage frais (carré frais)","2"],["Jambon de dinde","1 tranche"],["Concombre","quelques rondelles"]],kcal:300},kcal:[330,300],tps:"5 min"},
+  pdj4:{elle:{nom:"Petits suisses & kiwis",ing:[["Petits suisses","2"],["Kiwis","2"],["Flocons d'avoine","25 g"]],kcal:280},kcal:[330,280],tps:"5 min"},
+
+  /* --- Collations --- */
+  col_pomme:{nom:"Pomme + fromage blanc",ing:[["Pomme","1"],["Fromage blanc","100 g"]],kcal:[140,140],tps:"2 min"},
+  col_kiwi:{nom:"Kiwis + fromage blanc",ing:[["Kiwis","2"],["Fromage blanc","100 g"]],kcal:[155,155],tps:"2 min"},
+  /* Jours handball : les repas diffèrent entre 👨 (sportif) et 👩 (journée normale) */
+  col_hand:{duo:true,
+    lui:{nom:"Pré-handball (16 h)",ing:[["Banane","1"],["Fromage blanc","150 g"],["Flocons d'avoine","30 g"]],kcal:310},
+    elle:{nom:"Collation classique",ing:[["Pomme","1"],["Fromage blanc","100 g"]],kcal:140},
+    kcal:[310,140],tps:"3 min"},
+
+  /* --- Déjeuners --- */
+  l_poulet_riz:{nom:"Poulet, riz & brocolis",ing:[["Blanc de poulet","150 g","120 g"],["Riz (poids cru)","90 g","70 g"],["Brocolis","250 g","200 g"],["Huile d'olive","1 c. à s.","1 c. à c."]],kcal:[660,520],tps:"10 min*"},
+  l_pates_thon:{nom:"Pâtes complètes au thon",ing:[["Pâtes complètes (cru)","90 g","70 g"],["Thon en boîte","1 boîte 140 g","1 boîte 100 g"],["Sauce tomate","100 g"],["Oignon","½"]],kcal:[650,520],tps:"10 min*"},
+  l_steak_pdt:{nom:"Steak haché, pommes de terre & haricots verts",ing:[["Steak haché 5 %","125 g","100 g"],["Pommes de terre","300 g","250 g"],["Haricots verts","200 g"],["Beurre","1 noisette"]],kcal:[630,510],tps:"10 min*"},
+  l_dinde_lentilles:{nom:"Dinde aux lentilles & carottes",ing:[["Escalope de dinde","150 g","120 g"],["Lentilles (cru)","70 g","55 g"],["Carottes","200 g","150 g"],["Moutarde","1 c. à c."]],kcal:[650,520],tps:"10 min*"},
+  l_riz_dinde:{nom:"Dinde, riz & courgettes",ing:[["Escalope de dinde","150 g","120 g"],["Riz (cru)","90 g","70 g"],["Courgettes","250 g","200 g"],["Huile d'olive","1 c. à s.","1 c. à c."]],kcal:[650,520],tps:"10 min*"},
+  l_pates_poulet:{nom:"Pâtes complètes au poulet",ing:[["Pâtes complètes (cru)","90 g","70 g"],["Blanc de poulet","150 g","120 g"],["Courgettes","200 g","150 g"],["Sauce tomate","100 g"]],kcal:[670,540],tps:"10 min*"},
+  l_colin:{nom:"Colin, pommes de terre & carottes",ing:[["Colin surgelé","150 g","130 g"],["Pommes de terre","300 g","250 g"],["Carottes","150 g"],["Citron","½"]],kcal:[560,460],tps:"10 min*"},
+  l_salade_pdt:{nom:"Grande salade jambon & pommes de terre",ing:[["Pommes de terre","250 g","200 g"],["Jambon","blanc 👨 · dinde 👩 — 2 tranches"],["Tomates","2"],["Concombre","½"],["Vinaigrette légère","1 c. à s."]],kcal:[540,460],tps:"8 min"},
+  l_plaisir:{nom:"🎉 Repas plaisir — libre !",ing:[["Ce qui vous fait envie","burger, pizza, resto…"],["Astuce","évitez juste les sodas sucrés"]],kcal:[1000,800],tps:"—"},
+
+  /* --- Dîners --- */
+  d_salade_thon:{nom:"Salade de thon complète",ing:[["Thon en boîte","1 boîte 140 g","1 boîte 100 g"],["Pommes de terre","200 g","150 g"],["Tomates","2"],["Salade","2 poignées"],["Concombre","½"]],kcal:[490,390],tps:"8 min"},
+  d_jambon_puree:{nom:"Jambon, purée & haricots verts",ing:[["Jambon","blanc 👨 · dinde 👩 — 2 tranches"],["Pommes de terre (purée)","250 g","200 g"],["Haricots verts","200 g","150 g"]],kcal:[470,390],tps:"10 min*"},
+  d_poulet_courg:{nom:"Poulet, courgettes & fromage blanc",ing:[["Blanc de poulet","120 g","100 g"],["Courgettes","250 g","200 g"],["Fromage blanc","100 g"]],kcal:[460,390],tps:"10 min*"},
+  d_dinde_carottes:{nom:"Dinde, carottes & fromage blanc",ing:[["Escalope de dinde","120 g","100 g"],["Carottes","200 g","150 g"],["Fromage blanc","150 g","100 g"]],kcal:[450,360],tps:"10 min*"},
+  d_pates_jambon:{nom:"Pâtes complètes au jambon",ing:[["Pâtes complètes (cru)","70 g","55 g"],["Jambon","blanc 👨 · dinde 👩 — 2 tranches"],["Sauce tomate","100 g"],["Salade","1 poignée"]],kcal:[480,400],tps:"10 min*"},
+  d_riz_thon:{nom:"Riz au thon & tomates",ing:[["Riz (cru)","70 g","55 g"],["Thon en boîte","1 boîte 140 g","1 boîte 100 g"],["Tomates","2"],["Oignon","½"]],kcal:[480,390],tps:"10 min*"},
+  dh_riz_thon:{duo:true,
+    lui:{nom:"Léger — seulement si faim",ing:[["Fromage blanc (ou yaourt nature)","150 g"],["Optionnel","1 banane si grosse faim"]],kcal:95},
+    elle:{nom:"Riz au thon & tomates",ing:[["Riz (cru)","55 g"],["Thon en boîte","1 boîte 100 g"],["Tomates","2"],["Oignon","½"]],kcal:390},
+    kcal:[95,390],tps:"10 min*"},
+  dh_poulet_courg:{duo:true,
+    lui:{nom:"Léger — seulement si faim",ing:[["Fromage blanc (ou yaourt nature)","150 g"],["Optionnel","1 banane si grosse faim"]],kcal:95},
+    elle:{nom:"Poulet, courgettes & fromage blanc",ing:[["Blanc de poulet","100 g"],["Courgettes","200 g"],["Fromage blanc","100 g"]],kcal:390},
+    kcal:[95,390],tps:"10 min*"},
+  dh_dinde:{duo:true,
+    lui:{nom:"Léger — seulement si faim",ing:[["Fromage blanc (ou yaourt nature)","150 g"],["Optionnel","1 banane si grosse faim"]],kcal:95},
+    elle:{nom:"Dinde, carottes & fromage blanc",ing:[["Escalope de dinde","100 g"],["Carottes","150 g"],["Fromage blanc","100 g"]],kcal:360},
+    kcal:[95,360],tps:"10 min*"}
+};
+
+/* ==========================================================
+   DONNÉES — Structure des 4 semaines
+   ========================================================== */
+const JOURS = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
+const TYPES = ["Petit-déjeuner","Déjeuner","Collation","Dîner"];
+function jour(dej,col,din){return ["pdj",dej,col,din];}
+
+const SEMAINES = [
+  /* ---- SEMAINE 1 ---- */
+  [
+    jour("l_poulet_riz","col_pomme","d_salade_thon"),
+    jour("l_pates_thon","col_hand","dh_riz_thon"),
+    jour("l_steak_pdt","col_pomme","d_poulet_courg"),
+    jour("l_riz_dinde","col_hand","dh_dinde"),
+    jour("l_dinde_lentilles","col_kiwi","d_jambon_puree"),
+    jour("l_plaisir","col_pomme","d_salade_thon"),
+    jour("l_salade_pdt","col_kiwi","d_pates_jambon")
+  ],
+  /* ---- SEMAINE 2 ---- */
+  [
+    jour("l_pates_poulet","col_pomme","d_riz_thon"),
+    jour("l_steak_pdt","col_hand","dh_poulet_courg"),
+    jour("l_dinde_lentilles","col_pomme","d_jambon_puree"),
+    jour("l_poulet_riz","col_hand","dh_dinde"),
+    jour("l_colin","col_kiwi","d_poulet_courg"),
+    jour("l_plaisir","col_pomme","d_dinde_carottes"),
+    jour("l_salade_pdt","col_kiwi","d_pates_jambon")
+  ],
+  /* ---- SEMAINE 3 (variante de la 1) ---- */
+  [
+    jour("l_poulet_riz","col_kiwi","d_riz_thon"),
+    jour("l_riz_dinde","col_hand","dh_dinde"),
+    jour("l_steak_pdt","col_pomme","d_jambon_puree"),
+    jour("l_pates_thon","col_hand","dh_riz_thon"),
+    jour("l_dinde_lentilles","col_pomme","d_poulet_courg"),
+    jour("l_plaisir","col_kiwi","d_salade_thon"),
+    jour("l_salade_pdt","col_pomme","d_pates_jambon")
+  ],
+  /* ---- SEMAINE 4 (variante de la 2) ---- */
+  [
+    jour("l_riz_dinde","col_pomme","d_salade_thon"),
+    jour("l_pates_poulet","col_hand","dh_riz_thon"),
+    jour("l_poulet_riz","col_kiwi","d_jambon_puree"),
+    jour("l_steak_pdt","col_hand","dh_poulet_courg"),
+    jour("l_colin","col_pomme","d_riz_thon"),
+    jour("l_plaisir","col_kiwi","d_dinde_carottes"),
+    jour("l_salade_pdt","col_pomme","d_pates_jambon")
+  ]
+];
+const HANDBALL = [1,3]; /* mardi & jeudi */
+
+/* Rotation des petits-déjeuners 👩 (Lun → Dim) : salé le mercredi et le samedi.
+   Elle peut remplacer n'importe quel jour par la version salée si elle préfère. */
+const PDJ_ROT = ["pdj1","pdj2","pdj3","pdj4","pdj1","pdj3","pdj2"];
+SEMAINES.forEach(week => week.forEach((day,d) => { day[0] = PDJ_ROT[d]; }));
+
+/* ==========================================================
+   DONNÉES — Listes de courses POUR 2 PERSONNES (par rayons)
+   ========================================================== */
+const BASE_COURSES = {
+  "Boucherie / Volaille":[
+    ["Blanc de poulet","≈ 1,2 kg"],
+    ["Escalopes de dinde","≈ 1 kg"],
+    ["Steak haché 5 %","2 × 125 g + 2 × 100 g"],
+    ["Jambon blanc (👨)","6-8 tranches"],
+    ["Jambon de dinde (👩, sans porc)","8 tranches"]
+  ],
+  "Fruits & Légumes":[
+    ["Pommes de terre","4,5 kg"],
+    ["Carottes","1,5 kg"],
+    ["Courgettes","5"],
+    ["Brocolis","1 gros (ou 800 g surgelé)"],
+    ["Tomates","14"],
+    ["Concombre","3"],
+    ["Salade","1 à 2"],
+    ["Oignons","4"],
+    ["Bananes","6"],
+    ["Pommes","8"],
+    ["Kiwis","10"],
+    ["Citron","1"]
+  ],
+  "Épicerie":[
+    ["Riz (paquet 1 kg)","≈ 600 g utilisés"],
+    ["Pâtes complètes (500 g)","≈ 550 g → prends 2 paquets"],
+    ["Lentilles vertes","≈ 250 g"],
+    ["Thon en boîte","4 × 140 g + 5 × 100 g"],
+    ["Sauce tomate","3 briques"],
+    ["Flocons d'avoine (1 kg)","≈ 600 g utilisés"],
+    ["Pain complet","1 (petit-déj salé 👩)"],
+    ["Café, huile d'olive, moutarde","fond de placard"]
+  ],
+  "Crèmerie":[
+    ["Petits suisses","≈ 16 (1 pack de 12 + 4)"],
+    ["Fromage frais (type carré frais)","4 portions"],
+    ["Fromage blanc","2 gros pots de 1 kg"]
+  ],
+  "Surgelés":[
+    ["Haricots verts surgelés","1,5 kg"]
+  ]
+};
+function courses(extraSurgeles){
+  const c = JSON.parse(JSON.stringify(BASE_COURSES));
+  if(extraSurgeles) c["Surgelés"].push(["Colin surgelé","≈ 550 g"]);
+  return c;
+}
+const LISTES = [courses(false),courses(true),courses(false),courses(true)];
+
+/* ==========================================================
+   DONNÉES — Batch cooking du dimanche (~45 min, pour 2)
+   ========================================================== */
+const BATCH = [
+  ["Lancer les féculents","Riz (600 g) dans une casserole, pâtes complètes (550 g) dans une autre, lentilles (250 g) dans une troisième. Tout cuit pendant que vous faites le reste.","0 → 25 min"],
+  ["Four : poulet & dinde","Blancs de poulet + escalopes de dinde de la semaine (pour 2) sur une grande plaque, filet d'huile, herbes, sel. Four 200 °C.","0 → 25 min"],
+  ["Pommes de terre","≈ 3,5 kg de pommes de terre coupées en morceaux, à l'eau ou à la vapeur. Une partie servira pour la purée.","10 → 30 min"],
+  ["Légumes vapeur","Brocolis, carottes en rondelles et haricots verts, à la vapeur ou à la poêle (croquants, ils se réchauffent mieux).","25 → 40 min"],
+  ["Portionner","Répartir dans des boîtes en respectant les 2 tailles de portions : boîtes 👨 et boîtes 👩 (un coup de feutre suffit). 3-4 jours au frigo, le reste au congélateur.","40 → 45 min"]
+];
+
+/* ==========================================================
+   DONNÉES — Budget estimé par semaine (2 personnes)
+   ========================================================== */
+const BUDGET = [
+  ["Boucherie / volaille (poulet, dinde, steak, jambon)","≈ 28 €"],
+  ["Fruits & légumes","≈ 18 €"],
+  ["Épicerie (riz, pâtes, lentilles, thon, avoine, sauce)","≈ 14 €"],
+  ["Crèmerie (petits suisses, fromage blanc, fromage frais)","≈ 10 €"],
+  ["Surgelés (haricots verts, colin 1 semaine sur 2)","≈ 5-8 €"]
+];
+
+/* ==========================================================
+   ÉTAT — sauvegarde localStorage
+   state.checks : { "s0d1m2": true }
+   state.suivi  : { a:[{poids,taille,note}×4], b:[…×4] }  (a = 👨, b = 👩)
+   ========================================================== */
+const KEY = "planAlimentaireV1";
+let state = {checks:{}, suivi:{a:[{},{},{},{}], b:[{},{},{},{}]}};
+try{
+  const saved = JSON.parse(localStorage.getItem(KEY));
+  if(saved){
+    if(saved.checks) state.checks = saved.checks;
+    /* Migration : l'ancienne version stockait le suivi sous forme de tableau simple */
+    if(Array.isArray(saved.suivi)) state.suivi.a = saved.suivi;
+    else if(saved.suivi) state.suivi = Object.assign(state.suivi, saved.suivi);
+  }
+}catch(e){ /* localStorage indisponible : le site marche quand même, sans sauvegarde */ }
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+}
+</script>
+<script>
+/* ==========================================================
+   RENDU — construction du site
+   ========================================================== */
+const nav = document.getElementById("nav");
+const main = document.getElementById("main");
+
+const PAGES = [
+  {id:"accueil",label:"🏠 Accueil"},
+  {id:"s0",label:"Semaine 1"},{id:"s1",label:"Semaine 2"},
+  {id:"s2",label:"Semaine 3"},{id:"s3",label:"Semaine 4"},
+  {id:"courses",label:"🛒 Courses"},
+  {id:"batch",label:"🍳 Batch cooking"},
+  {id:"suivi",label:"📈 Suivi"}
+];
+
+/* Calories totales d'un jour : [👨, 👩] (hors repas plaisir) */
+function kcalJour(mealIds){
+  return mealIds.reduce((t,id)=>{
+    if(id==="l_plaisir") return t;
+    return [t[0]+MEALS[id].kcal[0], t[1]+MEALS[id].kcal[1]];
+  },[0,0]);
+}
+
+/* --- Page Accueil --- */
+function pageAccueil(){
+  return `
+  <section class="card">
+    <h2><span class="dot">●</span> Objectifs du duo</h2>
+    <p>Mêmes repas pour les deux — seules les <b>quantités changent</b> (👨 / 👩 sur chaque ingrédient). Une seule liste de courses, un seul batch cooking.</p>
+    <div class="stats">
+      <div class="stat"><b>👨 105 kg</b><small>→ objectif 85-90 kg</small></div>
+      <div class="stat"><b>👨 ≈ 1 700</b><small>kcal / jour</small></div>
+      <div class="stat blue"><b>Mar · Jeu</b><small>Handball 🤾</small></div>
+      <div class="stat"><b>👩 60 kg</b><small>→ objectif 57 kg</small></div>
+      <div class="stat"><b>👩 ≈ 1 450</b><small>kcal / jour</small></div>
+      <div class="stat blue"><b>8 000 pas</b><small>+ séances 👩</small></div>
+      <div class="stat"><b>75-85 €</b><small>Budget / semaine à 2</small></div>
+    </div>
+    <div class="warn">⚠️ <span><b>👨</b> vise ~0,5-1 kg/semaine (déficit marqué). <b>👩</b> n'a que 3 kg à perdre : le déficit est volontairement doux — si elle a faim, elle ajoute un fruit ou un yaourt sans culpabiliser. Les soirs de handball, seul <b>👨</b> saute le dîner : <b>👩</b> mange normalement.</span></div>
+  </section>
+  <section class="card">
+    <h2><span class="dot">●</span> Comment ça marche</h2>
+    <p class="muted">
+      • <b>Petit-déjeuner 👨</b> : toujours identique (café, 2 petits suisses, 60 g d'avoine). <b>👩</b> : il varie chaque jour, avec une version salée le mercredi et le samedi — interchangeable selon l'envie.<br>
+      • <b>👩 ne mange pas de porc</b> : partout où il y a du jambon, elle prend du jambon de dinde.<br>
+      • <b>Mardi & jeudi</b> (handball 👨, en bleu) : <b>👨</b> collation renforcée vers 16 h puis dîner léger (yaourt si faim). <b>👩</b> ne fait pas de hand : collation normale et <b>vrai dîner</b> le soir.<br>
+      • <b>Samedi midi</b> : repas plaisir 🎉 pour les deux — totalement libre.<br>
+      • <b>Dimanche</b> : batch cooking de 45 min qui prépare presque toute la semaine pour 2.<br>
+      • Cochez chaque repas terminé : il devient vert et tout est sauvegardé automatiquement.<br>
+      • Les repas marqués <b>10 min*</b> se réchauffent en 10 min grâce au batch cooking.
+    </p>
+  </section>
+  <section class="card">
+    <h2>💾 Sauvegarde</h2>
+    <p class="muted">Vos coches et votre suivi sont enregistrés automatiquement <b>sur cet appareil</b>. Pour partager ou sécuriser vos données : exportez le fichier de sauvegarde et importez-le sur l'autre téléphone (ou gardez-le dans un cloud type Drive).</p>
+    <button class="btn primary" id="btnExport">⬇️ Exporter la sauvegarde</button>
+    <button class="btn" id="btnImport">⬆️ Importer une sauvegarde</button>
+    <input type="file" id="fileImport" accept=".json" hidden>
+  </section>
+  <section class="card">
+    <h2><span class="dot">●</span> Progression globale</h2>
+    <div class="progress-label"><span>Repas cochés sur les 4 semaines</span><span id="globalPct">0 %</span></div>
+    <div class="progress"><div id="globalBar"></div></div>
+  </section>`;
+}
+
+/* --- Un ingrédient : affiche 1 ou 2 quantités --- */
+function ingHTML(i){
+  if(i.length===3 && i[1]!==i[2])
+    return `<li>${i[0]} — <b>${i[1]}</b> 👨 · <b>${i[2]}</b> 👩</li>`;
+  return `<li>${i[0]} — <b>${i[1]}</b></li>`;
+}
+
+/* Petit-déjeuner de 👨, fixe tous les jours */
+const PDJ_LUI = [["Café noir","1 tasse"],["Petits suisses","2"],["Flocons d'avoine","60 g"]];
+
+/* --- Un repas --- */
+function mealHTML(w,d,m,id){
+  const meal = MEALS[id];
+  const key = `s${w}d${d}m${m}`;
+  const checked = state.checks[key] ? "checked" : "";
+  const kc = id==="l_plaisir" ? "~1000 👨 · ~800 👩"
+           : meal.kcal[0]===meal.kcal[1] ? meal.kcal[0]
+           : `${meal.kcal[0]} 👨 · ${meal.kcal[1]} 👩`;
+
+  /* Cas spécial : repas "duo" (jours handball) — deux versions côte à côte */
+  const contenu = meal.duo ? `
+      <div class="pdj-split">
+        <div><b>👨 ${meal.lui.nom}</b>
+          <ul>${meal.lui.ing.map(i=>`<li>${i[0]} — <b>${i[1]}</b></li>`).join("")}</ul>
+        </div>
+        <div><b>👩 ${meal.elle.nom}</b>
+          <ul>${meal.elle.ing.map(i=>`<li>${i[0]} — <b>${i[1]}</b></li>`).join("")}</ul>
+        </div>
+      </div>` :
+  /* Cas spécial : le petit-déjeuner affiche les deux versions côte à côte */
+  id.startsWith("pdj") ? `
+      <div class="meal-name">Petit-déjeuner</div>
+      <div class="pdj-split">
+        <div><b>👨 Classique (toujours pareil)</b>
+          <ul>${PDJ_LUI.map(i=>`<li>${i[0]} — <b>${i[1]}</b></li>`).join("")}</ul>
+        </div>
+        <div><b>👩 ${meal.elle.nom}</b>
+          <ul>${meal.elle.ing.map(i=>`<li>${i[0]} — <b>${i[1]}</b></li>`).join("")}</ul>
+        </div>
+      </div>` : `
+      <div class="meal-name">${meal.nom}</div>
+      <ul>${meal.ing.map(ingHTML).join("")}</ul>`;
+
+  return `
+  <div class="meal ${checked?'checked':''}" id="card-${key}">
+    <input type="checkbox" data-key="${key}" data-w="${w}" data-d="${d}" ${checked}
+           aria-label="Marquer ${TYPES[m]} comme terminé">
+    <div class="meal-info">
+      <div class="meal-type">${TYPES[m]}</div>
+      ${contenu}
+      <div class="meal-meta"><span>🔥 ${kc} kcal</span><span>⏱ ${meal.tps}</span></div>
+    </div>
+  </div>`;
+}
+
+/* --- Une semaine --- */
+function pageSemaine(w){
+  let html = `
+  <section class="card">
+    <h2><span class="dot">●</span> Semaine ${w+1}</h2>
+    <p class="muted">Quantités : <b>👨</b> lui · <b>👩</b> elle — quand une seule quantité est indiquée, elle vaut pour les deux.</p>
+    <div class="progress-label"><span>Progression de la semaine</span><span id="wpct-${w}">0 %</span></div>
+    <div class="progress"><div id="wbar-${w}"></div></div>
+    <div class="celebrate" id="wmsg-${w}">🏆 Semaine terminée !</div>
+  </section>`;
+  SEMAINES[w].forEach((meals,d)=>{
+    const hb = HANDBALL.includes(d);
+    const kj = kcalJour(meals);
+    html += `
+    <div class="day ${hb?'handball':''}" id="day-${w}-${d}">
+      <button class="day-head" data-toggle="${w}-${d}" aria-expanded="false">
+        <span class="day-name">${JOURS[d]}${hb?'<span class="badge-hb">🤾 Handball</span>':''}</span>
+        <span class="kcal">👨 ≈${kj[0]} · 👩 ≈${kj[1]} kcal${meals.includes("l_plaisir")?" + 🎉":""}</span>
+        <span class="chev">▼</span>
+      </button>
+      <div class="day-prog-wrap">
+        <div class="progress"><div id="dbar-${w}-${d}"></div></div>
+      </div>
+      <div class="day-msg" id="dmsg-${w}-${d}">🎉 Journée terminée</div>
+      <div class="day-body">
+        ${meals.map((id,m)=>mealHTML(w,d,m,id)).join("")}
+      </div>
+    </div>`;
+  });
+  return html;
+}
+
+/* --- Listes de courses --- */
+function pageCourses(){
+  let html = `<section class="card"><h2><span class="dot">●</span> Listes de courses <span class="muted">(pour 2 personnes)</span></h2>
+  <p class="muted">Classées par rayons. Les semaines partagent volontairement les mêmes ingrédients pour réduire le budget : certains paquets (riz, avoine, huile) durent plusieurs semaines.</p></section>`;
+  LISTES.forEach((liste,w)=>{
+    html += `<section class="card"><h2>🛒 Semaine ${w+1}</h2>`;
+    for(const [rayon,items] of Object.entries(liste)){
+      html += `<div class="rayon"><h3>${rayon}</h3><ul>` +
+        items.map(i=>`<li><span>${i[0]}</span><span>${i[1]}</span></li>`).join("") +
+        `</ul></div>`;
+    }
+    html += `</section>`;
+  });
+  html += `<section class="card"><h2>💶 Budget estimé par semaine (2 personnes)</h2>
+    <ul class="rayon" style="list-style:none">` +
+    BUDGET.map(b=>`<li style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--border)"><span>${b[0]}</span><b>${b[1]}</b></li>`).join("") +
+    `</ul>
+    <div class="stats" style="margin-top:14px">
+      <div class="stat"><b>≈ 75-78 €</b><small>Total / semaine à 2</small></div>
+      <div class="stat"><b>≈ 37-39 €</b><small>Soit par personne</small></div>
+    </div>
+    <div class="warn">⚠️ <span>Estimation en supermarché discount / marques distributeur. Le repas plaisir du samedi n'est pas compté.</span></div>
+  </section>`;
+  return html;
+}
+
+/* --- Batch cooking --- */
+function pageBatch(){
+  return `<section class="card">
+    <h2>🍳 Batch cooking du dimanche <span class="muted">(~45 min, pour 2)</span></h2>
+    <p class="muted">Une seule session de cuisine prépare les féculents, viandes et légumes de la semaine pour vous deux. Ensuite, chaque repas = assembler + réchauffer en moins de 10 minutes.</p>
+    ${BATCH.map((s,i)=>`
+    <div class="step">
+      <div class="num">${i+1}</div>
+      <div><b>${s[0]}</b><span>${s[1]}</span><br><small>⏱ ${s[2]}</small></div>
+    </div>`).join("")}
+    <div class="warn">⚠️ <span>Conservation : 3-4 jours max au réfrigérateur dans des boîtes fermées. Congelez les portions de jeudi/vendredi et sortez-les la veille.</span></div>
+  </section>`;
+}
+
+/* --- Tableau de suivi (👨 puis 👩) --- */
+function tableSuivi(qui,label,placeholder){
+  let rows = "";
+  for(let w=0; w<4; w++){
+    const s = state.suivi[qui][w] || {};
+    rows += `<tr>
+      <td><b>S${w+1}</b></td>
+      <td><input type="number" step="0.1" min="0" placeholder="kg" data-suivi="poids" data-qui="${qui}" data-w="${w}" value="${s.poids??""}"></td>
+      <td><input type="number" step="0.5" min="0" placeholder="cm" data-suivi="taille" data-qui="${qui}" data-w="${w}" value="${s.taille??""}"></td>
+      <td><input type="text" placeholder="${placeholder}" data-suivi="note" data-qui="${qui}" data-w="${w}" value="${s.note??""}"></td>
+    </tr>`;
+  }
+  return `<h2 style="margin-top:8px">${label}</h2>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th></th><th>Poids (kg)</th><th>Tour de taille (cm)</th><th>Remarques</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+function pageSuivi(){
+  return `<section class="card">
+    <h2>📈 Tableau de suivi</h2>
+    <p class="muted">Pesez-vous une fois par semaine, le même jour, le matin à jeun. Tout est sauvegardé automatiquement sur cet appareil.</p>
+    ${tableSuivi("a","👨 Lui","Énergie, faim, handball…")}
+    <div style="height:18px"></div>
+    ${tableSuivi("b","👩 Elle","Énergie, faim, séances…")}
+    <div class="stats" style="margin-top:16px" id="suiviStats"></div>
+  </section>`;
+}
+
+/* ==========================================================
+   CONSTRUCTION DU DOM
+   ========================================================== */
+PAGES.forEach((p,i)=>{
+  const b = document.createElement("button");
+  b.textContent = p.label;
+  b.dataset.page = p.id;
+  if(i===0) b.classList.add("active");
+  nav.appendChild(b);
+
+  const sec = document.createElement("div");
+  sec.className = "page" + (i===0?" visible":"");
+  sec.id = "page-" + p.id;
+  main.appendChild(sec);
+});
+
+document.getElementById("page-accueil").innerHTML = pageAccueil();
+for(let w=0; w<4; w++) document.getElementById("page-s"+w).innerHTML = pageSemaine(w);
+document.getElementById("page-courses").innerHTML = pageCourses();
+document.getElementById("page-batch").innerHTML = pageBatch();
+document.getElementById("page-suivi").innerHTML = pageSuivi();
+
+/* ==========================================================
+   INTERACTIONS
+   ========================================================== */
+
+/* Navigation entre onglets */
+nav.addEventListener("click",e=>{
+  const btn = e.target.closest("button");
+  if(!btn) return;
+  nav.querySelectorAll("button").forEach(b=>b.classList.toggle("active",b===btn));
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("visible"));
+  document.getElementById("page-"+btn.dataset.page).classList.add("visible");
+  window.scrollTo({top:0});
+});
+
+/* Accordéon des jours */
+main.addEventListener("click",e=>{
+  const head = e.target.closest("[data-toggle]");
+  if(!head) return;
+  const day = head.parentElement;
+  const body = day.querySelector(".day-body");
+  const open = day.classList.toggle("open");
+  head.setAttribute("aria-expanded", open);
+  body.style.maxHeight = open ? body.scrollHeight + "px" : "0";
+});
+
+/* Cases à cocher des repas + champs du suivi */
+main.addEventListener("change",e=>{
+  const el = e.target;
+  if(el.matches("input[type=checkbox][data-key]")){
+    const key = el.dataset.key;
+    if(el.checked) state.checks[key] = true;
+    else delete state.checks[key];
+    document.getElementById("card-"+key).classList.toggle("checked", el.checked);
+    save();
+    refresh(+el.dataset.w, +el.dataset.d);
+    const body = el.closest(".day-body");
+    if(body && body.parentElement.classList.contains("open"))
+      body.style.maxHeight = body.scrollHeight + "px";
+  }
+  if(el.matches("[data-suivi]")){
+    majChampSuivi(el);
+    majSuivi();
+  }
+});
+/* Sauvegarde aussi pendant la frappe dans le suivi */
+main.addEventListener("input",e=>{
+  if(e.target.matches("[data-suivi]")) majChampSuivi(e.target);
+});
+function majChampSuivi(el){
+  const qui = el.dataset.qui, w = +el.dataset.w;
+  state.suivi[qui][w] = state.suivi[qui][w] || {};
+  state.suivi[qui][w][el.dataset.suivi] = el.value;
+  save();
+}
+
+/* ==========================================================
+   PROGRESSION — jour, semaine, global
+   ========================================================== */
+function compteJour(w,d){
+  let done = 0;
+  for(let m=0;m<4;m++) if(state.checks[`s${w}d${d}m${m}`]) done++;
+  return done;
+}
+function refresh(w,d){
+  const dj = compteJour(w,d);
+  document.getElementById(`dbar-${w}-${d}`).style.width = (dj/4*100)+"%";
+  document.getElementById(`dmsg-${w}-${d}`).classList.toggle("on", dj===4);
+  document.getElementById(`day-${w}-${d}`).classList.toggle("done", dj===4);
+
+  let ws = 0;
+  for(let j=0;j<7;j++) ws += compteJour(w,j);
+  const wpct = Math.round(ws/28*100);
+  document.getElementById(`wbar-${w}`).style.width = wpct+"%";
+  document.getElementById(`wpct-${w}`).textContent = wpct+" %";
+  document.getElementById(`wmsg-${w}`).classList.toggle("on", ws===28);
+
+  const total = Object.keys(state.checks).length;
+  const gpct = Math.round(total/112*100);
+  document.getElementById("globalBar").style.width = gpct+"%";
+  document.getElementById("globalPct").textContent = gpct+" %";
+}
+
+/* Statistiques du suivi (perte pour chacun) */
+function statPerte(qui,depart,objectif,emoji){
+  const poids = state.suivi[qui].map(s=>parseFloat(s&&s.poids)).filter(v=>!isNaN(v));
+  if(!poids.length) return `<div class="stat"><b>${emoji} —</b><small>Note un poids pour voir tes stats</small></div>`;
+  const dernier = poids[poids.length-1];
+  const perte = depart - dernier;
+  return `
+    <div class="stat"><b>${emoji} ${dernier} kg</b><small>Dernier poids noté</small></div>
+    <div class="stat"><b>${perte>=0?"-":"+"}${Math.abs(perte).toFixed(1)} kg</b><small>Depuis le départ (${depart} kg)</small></div>
+    <div class="stat"><b>${Math.max(0,dernier-objectif).toFixed(1)} kg</b><small>Restants vers ${objectif} kg</small></div>`;
+}
+function majSuivi(){
+  document.getElementById("suiviStats").innerHTML =
+    statPerte("a",105,87.5,"👨") + statPerte("b",60,57,"👩");
+}
+
+/* ==========================================================
+   SAUVEGARDE — export / import du fichier JSON
+   ========================================================== */
+document.getElementById("btnExport").addEventListener("click",()=>{
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  const d = new Date().toISOString().slice(0,10);
+  a.download = `plan-alimentaire-sauvegarde-${d}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+document.getElementById("btnImport").addEventListener("click",()=>{
+  document.getElementById("fileImport").click();
+});
+document.getElementById("fileImport").addEventListener("change",e=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const data = JSON.parse(r.result);
+      if(!data.checks && !data.suivi) throw new Error("format");
+      state = Object.assign({checks:{},suivi:{a:[{},{},{},{}],b:[{},{},{},{}]}}, data);
+      save();
+      location.reload(); /* recharge la page avec les données importées */
+    }catch(err){
+      alert("Fichier de sauvegarde invalide.");
+    }
+  };
+  r.readAsText(f);
+});
+
+/* Initialisation : appliquer l'état sauvegardé */
+for(let w=0;w<4;w++) for(let d=0;d<7;d++) refresh(w,d);
+majSuivi();
+</script>
+</body>
+</html>
