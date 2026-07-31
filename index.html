@@ -310,6 +310,17 @@ td input:focus{border-color:var(--green);outline:none}
 </head>
 <body>
 
+<!-- Écran de connexion : bloque l'accès tant que l'un des 2 comptes n'est pas identifié -->
+<div id="loginGate" style="position:fixed;inset:0;background:#0b1020;display:flex;align-items:center;justify-content:center;z-index:999;padding:16px;">
+  <form id="loginForm" style="background:#111832;border:1px solid #232e55;border-radius:16px;padding:24px;width:100%;max-width:300px;text-align:center;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+    <h2 style="margin-bottom:14px;color:#e8ecf8">🔒 Connexion</h2>
+    <input id="loginEmail" type="email" placeholder="Email" required autocomplete="username" style="width:100%;margin-bottom:8px;padding:10px;border-radius:8px;border:1px solid #232e55;background:#182142;color:#e8ecf8">
+    <input id="loginPass" type="password" placeholder="Mot de passe" required autocomplete="current-password" style="width:100%;margin-bottom:12px;padding:10px;border-radius:8px;border:1px solid #232e55;background:#182142;color:#e8ecf8">
+    <button type="submit" style="width:100%;padding:10px;border-radius:999px;border:none;background:#3ddc84;color:#04120a;font-weight:700;cursor:pointer">Se connecter</button>
+    <p id="loginStatus" style="color:#98a3c7;font-size:.85rem;margin-top:12px;min-height:1.2em"></p>
+  </form>
+</div>
+
 <header>
   <h1>Mon Plan <span>Alimentaire</span></h1>
   <p>4 semaines · simple · économique · 10 min par repas</p>
@@ -519,8 +530,19 @@ try{
     else if(saved.suivi) state.suivi = Object.assign(state.suivi, saved.suivi);
   }
 }catch(e){ /* localStorage indisponible : le site marche quand même, sans sauvegarde */ }
+
+/* Pont vers le module Firebase tout en bas du fichier :
+   - getState/setState permettent au module (qui a sa propre portée)
+     de lire/remplacer l'état partagé
+   - onSave est rempli par le module une fois connecté : chaque save()
+     pousse alors aussi la donnée vers Firestore, en plus du cache local */
+window.getState = () => state;
+window.setState = (s) => { state = s; };
+window.onSave = null;
+
 function save(){
   try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+  if(window.onSave) window.onSave(state);
 }
 </script>
 <script>
@@ -749,24 +771,35 @@ function pageSuivi(){
 /* ==========================================================
    CONSTRUCTION DU DOM
    ========================================================== */
-PAGES.forEach((p,i)=>{
-  const b = document.createElement("button");
-  b.textContent = p.label;
-  b.dataset.page = p.id;
-  if(i===0) b.classList.add("active");
-  nav.appendChild(b);
+/* Construit (ou reconstruit) tout le site à partir de l'état courant.
+   Appelée par le module Firebase tout en bas, une fois les données
+   chargées (ou immédiatement en mode secours si Firebase est indisponible). */
+window.startApp = function(){
+  nav.innerHTML = "";
+  main.innerHTML = "";
 
-  const sec = document.createElement("div");
-  sec.className = "page" + (i===0?" visible":"");
-  sec.id = "page-" + p.id;
-  main.appendChild(sec);
-});
+  PAGES.forEach((p,i)=>{
+    const b = document.createElement("button");
+    b.textContent = p.label;
+    b.dataset.page = p.id;
+    if(i===0) b.classList.add("active");
+    nav.appendChild(b);
 
-document.getElementById("page-accueil").innerHTML = pageAccueil();
-for(let w=0; w<4; w++) document.getElementById("page-s"+w).innerHTML = pageSemaine(w);
-document.getElementById("page-courses").innerHTML = pageCourses();
-document.getElementById("page-batch").innerHTML = pageBatch();
-document.getElementById("page-suivi").innerHTML = pageSuivi();
+    const sec = document.createElement("div");
+    sec.className = "page" + (i===0?" visible":"");
+    sec.id = "page-" + p.id;
+    main.appendChild(sec);
+  });
+
+  document.getElementById("page-accueil").innerHTML = pageAccueil();
+  for(let w=0; w<4; w++) document.getElementById("page-s"+w).innerHTML = pageSemaine(w);
+  document.getElementById("page-courses").innerHTML = pageCourses();
+  document.getElementById("page-batch").innerHTML = pageBatch();
+  document.getElementById("page-suivi").innerHTML = pageSuivi();
+
+  for(let w=0;w<4;w++) for(let d=0;d<7;d++) refresh(w,d);
+  majSuivi();
+};
 
 /* ==========================================================
    INTERACTIONS
@@ -899,9 +932,119 @@ document.getElementById("fileImport").addEventListener("change",e=>{
   r.readAsText(f);
 });
 
-/* Initialisation : appliquer l'état sauvegardé */
-for(let w=0;w<4;w++) for(let d=0;d<7;d++) refresh(w,d);
-majSuivi();
+</script>
+
+<script type="module">
+/* ==========================================================
+   FIREBASE — sauvegarde partagée entre vous deux
+   ==========================================================
+   1. Crée un projet sur https://console.firebase.google.com
+   2. Active "Firestore Database" (mode production) et "Authentication"
+      → méthode "E-mail/Mot de passe"
+   3. Dans Authentication > Users, crée VOS DEUX comptes (email + mot de passe)
+   4. Colle ta config ci-dessous (Paramètres du projet > Général > Vos applications > SDK config)
+   5. Dans Firestore > Règles, colle :
+      rules_version = '2';
+      service cloud.firestore {
+        match /databases/{database}/documents {
+          match /planAlimentaire/{doc} {
+            allow read, write: if request.auth != null;
+          }
+        }
+      }
+   ========================================================== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "COLLE_TA_CLE_ICI",
+  authDomain: "TON-PROJET.firebaseapp.com",
+  projectId: "TON-PROJET",
+  storageBucket: "TON-PROJET.appspot.com",
+  messagingSenderId: "...",
+  appId: "..."
+};
+
+const loginGate = document.getElementById("loginGate");
+const loginForm = document.getElementById("loginForm");
+const loginStatus = document.getElementById("loginStatus");
+
+/* Identifiant de session, pour ignorer les mises à jour qu'on vient
+   soi-même d'envoyer (évite de se re-rafraîchir soi-même en boucle) */
+const sessionId = Math.random().toString(36).slice(2);
+let firestoreReady = false;
+
+function demarrerEnModeSecours(msg){
+  /* Si Firebase n'est pas configuré / indisponible, le site continue
+     de fonctionner en solo avec la sauvegarde locale (comme avant). */
+  loginGate.style.display = "none";
+  if(msg) console.warn(msg);
+  window.startApp();
+}
+
+try{
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const ref = doc(db, "planAlimentaire", "etat");
+
+  loginForm.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    loginStatus.textContent = "Connexion...";
+    try{
+      await signInWithEmailAndPassword(
+        auth,
+        document.getElementById("loginEmail").value.trim(),
+        document.getElementById("loginPass").value
+      );
+    }catch(err){
+      loginStatus.textContent = "Email ou mot de passe incorrect.";
+    }
+  });
+
+  onAuthStateChanged(auth, async (user)=>{
+    if(!user){
+      loginGate.style.display = "flex";
+      return;
+    }
+    loginGate.style.display = "none";
+
+    if(!firestoreReady){
+      firestoreReady = true;
+
+      /* Pousse chaque save() local vers Firestore, en plus du cache local */
+      window.onSave = (s)=>{
+        setDoc(ref, Object.assign({}, s, {_by: sessionId})).catch(console.error);
+      };
+
+      /* Premier chargement */
+      const snap = await getDoc(ref);
+      if(snap.exists()){
+        window.setState(snap.data());
+      }else{
+        /* Rien en ligne : on initialise avec l'état local actuel */
+        await setDoc(ref, Object.assign({}, window.getState(), {_by: sessionId}));
+      }
+      window.startApp();
+
+      /* Écoute les changements faits par l'autre personne, en temps réel */
+      onSnapshot(ref, (snap)=>{
+        if(!snap.exists()) return;
+        const data = snap.data();
+        if(data._by === sessionId) return; /* c'est notre propre écriture */
+        window.setState(data);
+        window.startApp();
+      });
+    }
+  });
+}catch(err){
+  demarrerEnModeSecours("Firebase indisponible, mode local uniquement : " + err.message);
+}
 </script>
 </body>
 </html>
