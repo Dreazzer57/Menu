@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon Plan Alimentaire — 4 semaines</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b1020">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Plan Alim.">
+<link rel="icon" href="icons/icon-192.png">
 <style>
 /* ==========================================================
    1. VARIABLES & RESET
@@ -310,17 +317,6 @@ td input:focus{border-color:var(--green);outline:none}
 </head>
 <body>
 
-<!-- Écran de connexion : bloque l'accès tant que l'un des 2 comptes n'est pas identifié -->
-<div id="loginGate" style="position:fixed;inset:0;background:#0b1020;display:flex;align-items:center;justify-content:center;z-index:999;padding:16px;">
-  <form id="loginForm" style="background:#111832;border:1px solid #232e55;border-radius:16px;padding:24px;width:100%;max-width:300px;text-align:center;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
-    <h2 style="margin-bottom:14px;color:#e8ecf8">🔒 Connexion</h2>
-    <input id="loginEmail" type="email" placeholder="Email" required autocomplete="username" style="width:100%;margin-bottom:8px;padding:10px;border-radius:8px;border:1px solid #232e55;background:#182142;color:#e8ecf8">
-    <input id="loginPass" type="password" placeholder="Mot de passe" required autocomplete="current-password" style="width:100%;margin-bottom:12px;padding:10px;border-radius:8px;border:1px solid #232e55;background:#182142;color:#e8ecf8">
-    <button type="submit" style="width:100%;padding:10px;border-radius:999px;border:none;background:#3ddc84;color:#04120a;font-weight:700;cursor:pointer">Se connecter</button>
-    <p id="loginStatus" style="color:#98a3c7;font-size:.85rem;margin-top:12px;min-height:1.2em"></p>
-  </form>
-</div>
-
 <header>
   <h1>Mon Plan <span>Alimentaire</span></h1>
   <p>4 semaines · simple · économique · 10 min par repas</p>
@@ -332,60 +328,48 @@ td input:focus{border-color:var(--green);outline:none}
 
 <script>
 /* ==========================================================
-   DONNÉES — Base des repas (2 personnes)
-   Chaque ingrédient : [nom, quantité 👨, quantité 👩]
-   Si la quantité est identique pour les deux, un seul élément.
-   kcal : [👨, 👩]. Mêmes repas pour les deux = courses simples.
+   DONNÉES — Base des repas
+   Chaque ingrédient : [nom, quantité]
    ========================================================== */
 const MEALS = {
-  /* Petit-déjeuner 👨 : toujours identique. 👩 : varie chaque jour, sans flocons
-     d'avoine, avec du salé (dont des œufs) certains jours (rotation ci-dessous). */
-  pdj1:{elle:{nom:"Fromage blanc, banane & miel",ing:[["Fromage blanc","150 g"],["Banane","1"],["Miel","1 c. à c."],["Cannelle","1 pincée"]],kcal:250},kcal:[330,250],tps:"3 min"},
-  pdj2:{elle:{nom:"Œufs & tartine 🍳🧂",ing:[["Œufs (omelette, au plat ou brouillés)","2"],["Pain complet","1 tranche"],["Tomate","1 petite"]],kcal:270},kcal:[330,270],tps:"5 min"},
-  pdj3:{elle:{nom:"Tartines salées 🧂",ing:[["Pain complet","2 tranches"],["Fromage frais (carré frais)","2"],["Jambon de dinde","1 tranche"],["Concombre","quelques rondelles"]],kcal:300},kcal:[330,300],tps:"5 min"},
-  pdj4:{elle:{nom:"Petits suisses, kiwis & tartine",ing:[["Petits suisses","2"],["Kiwis","2"],["Pain complet","1 tranche"],["Confiture","1 c. à c."]],kcal:260},kcal:[330,260],tps:"3 min"},
+  /* Petit-déjeuner : alterne entre 2 versions au fil de la semaine */
+  pdj_avoine:{nom:"Avoine, petits suisses & muesli",ing:[["Café noir","1 tasse"],["Petits suisses","4"],["Flocons d'avoine","40 g"],["Muesli","20 g"]],kcal:410,tps:"3 min"},
+  pdj_sale:{nom:"Pain complet, jambon, fromage frais & shake protéiné",ing:[["Pain complet","2 tranches"],["Jambon blanc","3 tranches"],["Fromage frais à tartiner","30 g"],["Protéine en poudre","1 dose (≈30 g), diluée dans de l'eau ou du lait"]],kcal:460,tps:"3 min"},
 
   /* --- Collations --- */
-  col_pomme:{nom:"Pomme + fromage blanc",ing:[["Pomme","1"],["Fromage blanc","100 g"]],kcal:[140,140],tps:"2 min"},
-  col_kiwi:{nom:"Kiwis + fromage blanc",ing:[["Kiwis","2"],["Fromage blanc","100 g"]],kcal:[155,155],tps:"2 min"},
-  /* Jours handball : les repas diffèrent entre 👨 (sportif) et 👩 (journée normale) */
-  col_hand:{duo:true,
-    lui:{nom:"Pré-handball (16 h)",ing:[["Banane","1"],["Fromage blanc","150 g"],["Flocons d'avoine","30 g"]],kcal:310},
-    elle:{nom:"Collation classique",ing:[["Pomme","1"],["Fromage blanc","100 g"]],kcal:140},
-    kcal:[310,140],tps:"3 min"},
+  col_pomme:{nom:"Pomme + amandes",ing:[["Pomme","1"],["Amandes","30 g"]],kcal:240,tps:"2 min"},
+  /* Jours handball : collation renforcée avant la séance */
+  col_hand:{nom:"Pré-handball (16 h)",ing:[["Banane","1"],["Flocons d'avoine","30 g"],["Beurre de cacahuète","25 g"]],kcal:350,tps:"3 min"},
 
   /* --- Déjeuners --- */
-  /* Variante hebdo : même assiette, mais 👩 remplace le poulet par du colin */
-  l_riz_mixte:{nom:"Riz & brocolis — poulet 👨 · colin 🐟 👩",ing:[["Protéine","blanc de poulet 150 g","colin surgelé 130 g"],["Riz (poids cru)","90 g","70 g"],["Brocolis","250 g","200 g"],["Huile d'olive","1 c. à s.","1 c. à c."]],kcal:[660,470],tps:"10 min*"},
-  l_poulet_riz:{nom:"Poulet, riz & brocolis",ing:[["Blanc de poulet","150 g","120 g"],["Riz (poids cru)","90 g","70 g"],["Brocolis","250 g","200 g"],["Huile d'olive","1 c. à s.","1 c. à c."]],kcal:[660,520],tps:"10 min*"},
-  l_pates_thon:{nom:"Pâtes complètes au thon",ing:[["Pâtes complètes (cru)","90 g","70 g"],["Thon en boîte","1 boîte 140 g","1 boîte 100 g"],["Sauce tomate","100 g"],["Oignon","½"]],kcal:[650,520],tps:"10 min*"},
-  l_steak_pdt:{nom:"Steak haché, pommes de terre & haricots verts",ing:[["Steak haché 5 %","125 g","100 g"],["Pommes de terre","300 g","250 g"],["Haricots verts","200 g"],["Beurre","1 noisette"]],kcal:[630,510],tps:"10 min*"},
-  l_dinde_lentilles:{nom:"Dinde aux lentilles & carottes",ing:[["Escalope de dinde","150 g","120 g"],["Lentilles (cru)","70 g","55 g"],["Carottes","200 g","150 g"],["Moutarde","1 c. à c."]],kcal:[650,520],tps:"10 min*"},
-  l_riz_dinde:{nom:"Dinde, riz & courgettes",ing:[["Escalope de dinde","150 g","120 g"],["Riz (cru)","90 g","70 g"],["Courgettes","250 g","200 g"],["Huile d'olive","1 c. à s.","1 c. à c."]],kcal:[650,520],tps:"10 min*"},
-  l_pates_poulet:{nom:"Pâtes complètes au poulet",ing:[["Pâtes complètes (cru)","90 g","70 g"],["Blanc de poulet","150 g","120 g"],["Courgettes","200 g","150 g"],["Sauce tomate","100 g"]],kcal:[670,540],tps:"10 min*"},
-  l_colin:{nom:"Colin, pommes de terre & carottes",ing:[["Colin surgelé","150 g","130 g"],["Pommes de terre","300 g","250 g"],["Carottes","150 g"],["Citron","½"]],kcal:[560,460],tps:"10 min*"},
-  l_salade_pdt:{nom:"Grande salade jambon & pommes de terre",ing:[["Pommes de terre","250 g","200 g"],["Jambon","blanc 👨 · dinde 👩 — 2 tranches"],["Tomates","2"],["Concombre","½"],["Vinaigrette légère","1 c. à s."]],kcal:[540,460],tps:"8 min"},
-  l_plaisir:{nom:"🎉 Repas plaisir — libre !",ing:[["Ce qui vous fait envie","burger, pizza, resto…"],["Astuce","évitez juste les sodas sucrés"]],kcal:[1000,800],tps:"—"},
+  l_poulet_riz:{nom:"Poulet, riz & brocolis",ing:[["Blanc de poulet","280 g"],["Riz (poids cru)","90 g"],["Brocolis","250 g"],["Huile d'olive","1 c. à s."]],kcal:790,tps:"10 min*"},
+  l_pates_thon:{nom:"Pâtes complètes au thon",ing:[["Pâtes complètes (cru)","90 g"],["Thon en boîte","1 boîte 280 g"],["Sauce tomate","100 g"],["Oignon","½"]],kcal:770,tps:"10 min*"},
+  l_steak_pdt:{nom:"Steak haché, pommes de terre & haricots verts",ing:[["Steak haché 5 %","280 g"],["Pommes de terre","300 g"],["Haricots verts","200 g"],["Beurre","1 noisette"]],kcal:780,tps:"10 min*"},
+  l_dinde_lentilles:{nom:"Dinde aux lentilles & carottes",ing:[["Escalope de dinde","250 g"],["Lentilles (cru)","90 g"],["Carottes","200 g"],["Moutarde","1 c. à c."]],kcal:760,tps:"10 min*"},
+  l_riz_dinde:{nom:"Dinde, riz & courgettes",ing:[["Escalope de dinde","280 g"],["Riz (cru)","90 g"],["Courgettes","250 g"],["Huile d'olive","1 c. à s."]],kcal:770,tps:"10 min*"},
+  l_pates_poulet:{nom:"Pâtes complètes au poulet",ing:[["Pâtes complètes (cru)","90 g"],["Blanc de poulet","250 g"],["Courgettes","200 g"],["Sauce tomate","100 g"]],kcal:765,tps:"10 min*"},
+  l_colin:{nom:"Colin, pommes de terre & carottes",ing:[["Colin surgelé","260 g"],["Pommes de terre","300 g"],["Carottes","150 g"],["Citron","½"]],kcal:690,tps:"10 min*"},
+  l_salade_pdt:{nom:"Grande salade jambon, thon & pommes de terre",ing:[["Pommes de terre","200 g"],["Jambon blanc","3 tranches"],["Thon en boîte","1 boîte 100 g"],["Tomates","2"],["Concombre","½"],["Vinaigrette légère","1 c. à s."]],kcal:560,tps:"10 min"},
+  l_saumon_riz:{nom:"Saumon, riz & brocolis",ing:[["Saumon","280 g"],["Riz (poids cru)","90 g"],["Brocolis","200 g"],["Citron & aneth","au goût"]],kcal:800,tps:"10 min*"},
+  l_truite_pdt:{nom:"Truite, pommes de terre & haricots verts",ing:[["Truite","280 g"],["Pommes de terre","250 g"],["Haricots verts","200 g"],["Citron","½"]],kcal:740,tps:"10 min*"},
+  l_plaisir:{nom:"🎉 Repas plaisir — libre !",ing:[["Ce qui te fait envie","burger, pizza, resto…"],["Astuce","évite juste les sodas sucrés"]],kcal:1000,tps:"—"},
 
   /* --- Dîners --- */
-  d_salade_thon:{nom:"Salade de thon complète",ing:[["Thon en boîte","1 boîte 140 g","1 boîte 100 g"],["Pommes de terre","200 g","150 g"],["Tomates","2"],["Salade","2 poignées"],["Concombre","½"]],kcal:[490,390],tps:"8 min"},
-  d_jambon_puree:{nom:"Jambon, purée & haricots verts",ing:[["Jambon","blanc 👨 · dinde 👩 — 2 tranches"],["Pommes de terre (purée)","250 g","200 g"],["Haricots verts","200 g","150 g"]],kcal:[470,390],tps:"10 min*"},
-  d_poulet_courg:{nom:"Poulet, courgettes & fromage blanc",ing:[["Blanc de poulet","120 g","100 g"],["Courgettes","250 g","200 g"],["Fromage blanc","100 g"]],kcal:[460,390],tps:"10 min*"},
-  d_dinde_carottes:{nom:"Dinde, carottes & fromage blanc",ing:[["Escalope de dinde","120 g","100 g"],["Carottes","200 g","150 g"],["Fromage blanc","150 g","100 g"]],kcal:[450,360],tps:"10 min*"},
-  d_pates_jambon:{nom:"Pâtes complètes au jambon",ing:[["Pâtes complètes (cru)","70 g","55 g"],["Jambon","blanc 👨 · dinde 👩 — 2 tranches"],["Sauce tomate","100 g"],["Salade","1 poignée"]],kcal:[480,400],tps:"10 min*"},
-  d_riz_thon:{nom:"Riz au thon & tomates",ing:[["Riz (cru)","70 g","55 g"],["Thon en boîte","1 boîte 140 g","1 boîte 100 g"],["Tomates","2"],["Oignon","½"]],kcal:[480,390],tps:"10 min*"},
-  dh_riz_thon:{duo:true,
-    lui:{nom:"Léger — seulement si faim",ing:[["Fromage blanc (ou yaourt nature)","150 g"],["Optionnel","1 banane si grosse faim"]],kcal:95},
-    elle:{nom:"Riz au thon & tomates",ing:[["Riz (cru)","55 g"],["Thon en boîte","1 boîte 100 g"],["Tomates","2"],["Oignon","½"]],kcal:390},
-    kcal:[95,390],tps:"10 min*"},
-  dh_poulet_courg:{duo:true,
-    lui:{nom:"Léger — seulement si faim",ing:[["Fromage blanc (ou yaourt nature)","150 g"],["Optionnel","1 banane si grosse faim"]],kcal:95},
-    elle:{nom:"Poulet, courgettes & fromage blanc",ing:[["Blanc de poulet","100 g"],["Courgettes","200 g"],["Fromage blanc","100 g"]],kcal:390},
-    kcal:[95,390],tps:"10 min*"},
-  dh_dinde:{duo:true,
-    lui:{nom:"Léger — seulement si faim",ing:[["Fromage blanc (ou yaourt nature)","150 g"],["Optionnel","1 banane si grosse faim"]],kcal:95},
-    elle:{nom:"Dinde, carottes & fromage blanc",ing:[["Escalope de dinde","100 g"],["Carottes","150 g"],["Fromage blanc","100 g"]],kcal:360},
-    kcal:[95,360],tps:"10 min*"}
+  d_salade_thon:{nom:"Salade de thon complète",ing:[["Thon en boîte","1 boîte 280 g"],["Pommes de terre","200 g"],["Tomates","2"],["Salade","2 poignées"],["Concombre","½"]],kcal:600,tps:"8 min"},
+  d_jambon_puree:{nom:"Jambon, purée, haricots verts & shake protéiné",ing:[["Jambon blanc","4 tranches"],["Pommes de terre (purée)","250 g"],["Haricots verts","200 g"],["Protéine en poudre","1 dose (≈30 g), diluée dans de l'eau"]],kcal:565,tps:"10 min*"},
+  d_poulet_courg:{nom:"Poulet & courgettes",ing:[["Blanc de poulet","250 g"],["Courgettes","250 g"],["Citron & herbes","au goût"]],kcal:530,tps:"10 min*"},
+  d_dinde_carottes:{nom:"Dinde & carottes",ing:[["Escalope de dinde","250 g"],["Carottes","200 g"],["Citron & herbes","au goût"]],kcal:520,tps:"10 min*"},
+  d_pates_jambon:{nom:"Pâtes complètes au jambon",ing:[["Pâtes complètes (cru)","70 g"],["Jambon blanc","4 tranches"],["Sauce tomate","100 g"],["Salade","1 poignée"]],kcal:500,tps:"10 min*"},
+  d_riz_thon:{nom:"Riz au thon & tomates",ing:[["Riz (cru)","70 g"],["Thon en boîte","1 boîte 280 g"],["Tomates","2"],["Oignon","½"]],kcal:570,tps:"10 min*"},
+  d_cabillaud_legumes:{nom:"Cabillaud, légumes & pommes de terre",ing:[["Cabillaud","260 g"],["Courgettes (ou haricots verts)","250 g"],["Pommes de terre","200 g"],["Citron","½"]],kcal:550,tps:"10 min*"},
+  /* Soirs de handball : dîner léger, seulement si faim */
+  dh_light:{nom:"Léger — shake protéiné, seulement si faim",ing:[["Protéine en poudre","1 dose (≈30 g), diluée dans de l'eau ou une boisson végétale"],["Optionnel","1 banane si grosse faim"]],kcal:150,tps:"2 min"},
+
+  /* --- Dîners "spéciaux" du samedi : un peu plus élaborés, saveurs asiatiques --- */
+  d_poulet_asia:{nom:"🥢 Poulet sauté soja-gingembre, riz & brocolis",ing:[["Blanc de poulet (émincé)","250 g"],["Riz (poids cru)","90 g"],["Brocolis (ou poivron)","200 g"],["Sauce soja","2 c. à s."],["Gingembre frais (ou en poudre) + ail","au goût"],["Huile de sésame","1 c. à c."]],kcal:720,tps:"20 min"},
+  d_saumon_teriyaki:{nom:"🥢 Saumon teriyaki, riz & edamame",ing:[["Saumon","250 g"],["Riz (poids cru)","90 g"],["Edamame (ou brocolis)","150 g"],["Sauce soja","2 c. à s."],["Miel","1 c. à c."],["Ail","1 gousse"]],kcal:760,tps:"20 min"},
+  d_boeuf_bobun:{nom:"🥢 Bo bun bœuf, nouilles de riz & crudités",ing:[["Bœuf (bavette ou steak)","220 g"],["Nouilles de riz","80 g"],["Carottes râpées","150 g"],["Concombre","½"],["Salade","1 poignée"],["Sauce nuoc-mam (nuoc-mam, citron vert, sucre, ail)","au goût"],["Cacahuètes concassées","1 c. à s."]],kcal:680,tps:"20 min"},
+  d_curry_poulet_coco:{nom:"🥢 Curry de poulet léger au lait de coco & riz",ing:[["Blanc de poulet","250 g"],["Lait de coco allégé","150 ml"],["Curry en poudre","1 c. à s."],["Poivron (ou haricots verts)","200 g"],["Riz (poids cru)","90 g"]],kcal:790,tps:"20 min"}
 };
 
 /* ==========================================================
@@ -395,138 +379,298 @@ const JOURS = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"
 const TYPES = ["Petit-déjeuner","Déjeuner","Collation","Dîner"];
 function jour(dej,col,din){return ["pdj",dej,col,din];}
 
-const SEMAINES = [
-  /* ---- SEMAINE 1 ---- */
+const WEEK_CONTENT = [
+  /* ---- SEMAINE 1 — poisson : saumon (1x) ---- */
   [
-    jour("l_riz_mixte","col_pomme","d_salade_thon"),
-    jour("l_pates_thon","col_hand","dh_riz_thon"),
+    jour("l_poulet_riz","col_pomme","d_salade_thon"),
+    jour("l_pates_thon","col_pomme","d_dinde_carottes"),
     jour("l_steak_pdt","col_pomme","d_poulet_courg"),
-    jour("l_riz_dinde","col_hand","dh_dinde"),
-    jour("l_dinde_lentilles","col_kiwi","d_jambon_puree"),
-    jour("l_plaisir","col_pomme","d_salade_thon"),
-    jour("l_salade_pdt","col_kiwi","d_pates_jambon")
+    jour("l_dinde_lentilles","col_pomme","d_riz_thon"),
+    jour("l_saumon_riz","col_pomme","d_jambon_puree"),
+    jour("l_plaisir","col_pomme","d_poulet_asia"),
+    jour("l_salade_pdt","col_pomme","d_pates_jambon")
   ],
-  /* ---- SEMAINE 2 ---- */
+  /* ---- SEMAINE 2 — poisson : colin + cabillaud (2x) ---- */
   [
     jour("l_pates_poulet","col_pomme","d_riz_thon"),
-    jour("l_steak_pdt","col_hand","dh_poulet_courg"),
-    jour("l_dinde_lentilles","col_pomme","d_jambon_puree"),
-    jour("l_riz_mixte","col_hand","dh_dinde"),
-    jour("l_colin","col_kiwi","d_poulet_courg"),
-    jour("l_plaisir","col_pomme","d_dinde_carottes"),
-    jour("l_salade_pdt","col_kiwi","d_pates_jambon")
-  ],
-  /* ---- SEMAINE 3 (variante de la 1) ---- */
-  [
-    jour("l_riz_mixte","col_kiwi","d_riz_thon"),
-    jour("l_riz_dinde","col_hand","dh_dinde"),
+    jour("l_colin","col_pomme","d_dinde_carottes"),
+    jour("l_riz_dinde","col_pomme","d_poulet_courg"),
     jour("l_steak_pdt","col_pomme","d_jambon_puree"),
-    jour("l_pates_thon","col_hand","dh_riz_thon"),
-    jour("l_dinde_lentilles","col_pomme","d_poulet_courg"),
-    jour("l_plaisir","col_kiwi","d_salade_thon"),
+    jour("l_dinde_lentilles","col_pomme","d_cabillaud_legumes"),
+    jour("l_plaisir","col_pomme","d_saumon_teriyaki"),
     jour("l_salade_pdt","col_pomme","d_pates_jambon")
   ],
-  /* ---- SEMAINE 4 (variante de la 2) ---- */
+  /* ---- SEMAINE 3 — poisson : truite (1x) ---- */
   [
     jour("l_riz_dinde","col_pomme","d_salade_thon"),
-    jour("l_pates_poulet","col_hand","dh_riz_thon"),
-    jour("l_riz_mixte","col_kiwi","d_jambon_puree"),
-    jour("l_steak_pdt","col_hand","dh_poulet_courg"),
-    jour("l_colin","col_pomme","d_riz_thon"),
-    jour("l_plaisir","col_kiwi","d_dinde_carottes"),
+    jour("l_truite_pdt","col_pomme","d_poulet_courg"),
+    jour("l_pates_poulet","col_pomme","d_dinde_carottes"),
+    jour("l_pates_thon","col_pomme","d_riz_thon"),
+    jour("l_poulet_riz","col_pomme","d_jambon_puree"),
+    jour("l_plaisir","col_pomme","d_boeuf_bobun"),
     jour("l_salade_pdt","col_pomme","d_pates_jambon")
+  ],
+  /* ---- SEMAINE 4 — poisson : cabillaud + saumon (2x) ---- */
+  [
+    jour("l_steak_pdt","col_pomme","d_cabillaud_legumes"),
+    jour("l_dinde_lentilles","col_pomme","d_dinde_carottes"),
+    jour("l_pates_thon","col_pomme","d_poulet_courg"),
+    jour("l_saumon_riz","col_pomme","d_jambon_puree"),
+    jour("l_pates_poulet","col_pomme","d_salade_thon"),
+    jour("l_plaisir","col_pomme","d_curry_poulet_coco"),
+    jour("l_salade_pdt","col_pomme","d_riz_thon")
   ]
 ];
-const HANDBALL = [1,3]; /* mardi & jeudi */
+const HANDBALL = []; /* handball en pause (récupération post-méniscectomie) */
 
-/* Rotation des petits-déjeuners 👩 (Lun → Dim) :
-   œufs le mardi et le vendredi, tartines salées le mercredi et le samedi.
-   Elle peut échanger les jours entre eux selon l'envie. */
-const PDJ_ROT = ["pdj1","pdj2","pdj3","pdj4","pdj2","pdj3","pdj1"];
-SEMAINES.forEach(week => week.forEach((day,d) => { day[0] = PDJ_ROT[d]; }));
+/* Petit-déjeuner alterné : avoine/muesli un jour sur deux, salé les autres jours */
+const BREAKFAST_ROT = ["pdj_avoine","pdj_sale","pdj_avoine","pdj_sale","pdj_avoine","pdj_sale","pdj_avoine"];
 
 /* ==========================================================
-   DONNÉES — Listes de courses POUR 2 PERSONNES (par rayons)
+   ROTATIONS — 3 cycles de 4 semaines, à partir du même vivier
+   de repas déjà équilibré. Chaque rotation réordonne les mêmes
+   4 semaines et mélange les jours de semaine (lundi→vendredi),
+   samedi (plaisir + plat asiatique) et dimanche (batch) restant
+   des repères fixes. Change de rotation via le bouton dans
+   l'onglet Accueil, sans avoir à redemander un nouveau plan.
    ========================================================== */
-const BASE_COURSES = {
-  "Boucherie / Volaille":[
-    ["Blanc de poulet","≈ 1,2 kg"],
-    ["Escalopes de dinde","≈ 1 kg"],
-    ["Steak haché 5 %","2 × 125 g + 2 × 100 g"],
-    ["Jambon blanc (👨)","6-8 tranches"],
-    ["Jambon de dinde (👩, sans porc)","8 tranches"]
-  ],
-  "Fruits & Légumes":[
-    ["Pommes de terre","4,5 kg"],
-    ["Carottes","1,5 kg"],
-    ["Courgettes","5"],
-    ["Brocolis","1 gros (ou 800 g surgelé)"],
-    ["Tomates","14"],
-    ["Concombre","3"],
-    ["Salade","1 à 2"],
-    ["Oignons","4"],
-    ["Bananes","6"],
-    ["Pommes","8"],
-    ["Kiwis","10"],
-    ["Citron","1"]
-  ],
-  "Épicerie":[
-    ["Riz (paquet 1 kg)","≈ 600 g utilisés"],
-    ["Pâtes complètes (500 g)","≈ 550 g → prends 2 paquets"],
-    ["Lentilles vertes","≈ 250 g"],
-    ["Thon en boîte","4 × 140 g + 5 × 100 g"],
-    ["Sauce tomate","3 briques"],
-    ["Flocons d'avoine (1 kg)","≈ 450 g (👨 uniquement)"],
-    ["Pain complet","1 à 2 (petits-déj 👩)"],
-    ["Café, huile d'olive, moutarde, miel, confiture","fond de placard"]
-  ],
-  "Crèmerie":[
-    ["Petits suisses","≈ 16 (1 pack de 12 + 4)"],
-    ["Œufs","6 (petits-déj 👩)"],
-    ["Fromage frais (type carré frais)","4 portions"],
-    ["Fromage blanc","2 gros pots de 1 kg"]
-  ],
-  "Surgelés":[
-    ["Haricots verts surgelés","1,5 kg"],
-    ["Colin surgelé","≈ 150 g (déjeuner poisson 👩)"]
-  ]
-};
-function courses(extraSurgeles){
-  const c = JSON.parse(JSON.stringify(BASE_COURSES));
-  if(extraSurgeles) c["Surgelés"][1] = ["Colin surgelé","≈ 450 g (déj poisson 👩 + déj colin à 2)"];
-  return c;
+const ROTATION_WEEK_ORDER = [ [0,1,2,3], [1,2,3,0], [2,3,0,1] ];
+const ROTATION_DAY_PERM   = [ [0,1,2,3,4,5,6], [2,3,4,0,1,5,6], [4,0,1,2,3,5,6] ];
+const NB_ROTATIONS = ROTATION_WEEK_ORDER.length;
+
+function buildSemaines(r){
+  const perm = ROTATION_DAY_PERM[r];
+  return ROTATION_WEEK_ORDER[r].map(origIdx=>{
+    const week = perm.map(origDay => WEEK_CONTENT[origIdx][origDay].slice());
+    week.forEach((day,d)=>{ day[0] = BREAKFAST_ROT[d]; });
+    return week;
+  });
 }
-const LISTES = [courses(false),courses(true),courses(false),courses(true)];
+function buildListes(r){
+  return ROTATION_WEEK_ORDER[r].map(origIdx => LISTES_BASE[origIdx]);
+}
+
+/* ==========================================================
+   DONNÉES — Listes de courses (1 personne, par semaine et par rayon)
+   Quantités recalculées à partir des repas réels de chaque semaine.
+   ========================================================== */
+const LISTES_BASE = [
+  /* ---- Semaine 1 ---- */
+  {
+    "Boucherie / Volaille":[
+      ["Blanc de poulet","≈ 780 g"],
+      ["Escalopes de dinde","≈ 500 g"],
+      ["Steak haché 5 %","280 g"],
+      ["Jambon blanc","≈ 20 tranches"]
+    ],
+    "Poissonnerie":[
+      ["Saumon","280 g"]
+    ],
+    "Fruits & Légumes":[
+      ["Pommes de terre","≈ 950 g"],
+      ["Carottes","400 g"],
+      ["Courgettes","250 g"],
+      ["Brocolis","2 têtes + un peu (≈ 650 g)"],
+      ["Tomates","6"],
+      ["Concombre","1"],
+      ["Salade","2"],
+      ["Oignon","1"],
+      ["Pommes","7"]
+    ],
+    "Épicerie":[
+      ["Riz (paquet 1 kg)","≈ 340 g utilisés"],
+      ["Pâtes complètes (500 g)","≈ 160 g utilisés"],
+      ["Lentilles vertes","≈ 90 g"],
+      ["Thon en boîte","≈ 940 g (6-7 boîtes)"],
+      ["Flocons d'avoine (1 kg)","≈ 160 g"],
+      ["Muesli","≈ 80 g"],
+      ["Pain complet","≈ 6 tranches (congèle le reste)"],
+      ["Amandes","≈ 210 g"],
+      ["Protéine en poudre (whey neutre/vanille)","4 doses (≈ 120 g)"],
+      ["Sauce soja, gingembre/ail, huile de sésame","fond de placard (petit format)"],
+      ["Café, huile d'olive, moutarde, vinaigrette","fond de placard"]
+    ],
+    "Crèmerie":[
+      ["Petits suisses","16"],
+      ["Fromage frais à tartiner","≈ 90 g"]
+    ],
+    "Surgelés":[
+      ["Haricots verts surgelés","400 g"]
+    ]
+  },
+  /* ---- Semaine 2 ---- */
+  {
+    "Boucherie / Volaille":[
+      ["Blanc de poulet","≈ 500 g"],
+      ["Escalopes de dinde","≈ 780 g"],
+      ["Steak haché 5 %","280 g"],
+      ["Jambon blanc","≈ 20 tranches"]
+    ],
+    "Poissonnerie":[
+      ["Saumon (teriyaki)","250 g"]
+    ],
+    "Fruits & Légumes":[
+      ["Pommes de terre","≈ 1,25 kg"],
+      ["Carottes","550 g"],
+      ["Courgettes","950 g (dont haricots verts frais possibles)"],
+      ["Edamame (ou brocolis)","150 g"],
+      ["Tomates","2"],
+      ["Concombre","1"],
+      ["Salade","1"],
+      ["Oignon","1"],
+      ["Citron","1"],
+      ["Pommes","7"]
+    ],
+    "Épicerie":[
+      ["Riz (paquet 1 kg)","≈ 250 g utilisés"],
+      ["Pâtes complètes (500 g)","≈ 160 g utilisés"],
+      ["Lentilles vertes","≈ 90 g"],
+      ["Thon en boîte","≈ 380 g (3 boîtes)"],
+      ["Flocons d'avoine (1 kg)","≈ 160 g"],
+      ["Muesli","≈ 80 g"],
+      ["Pain complet","≈ 6 tranches (congèle le reste)"],
+      ["Amandes","≈ 210 g"],
+      ["Protéine en poudre (whey neutre/vanille)","4 doses (≈ 120 g)"],
+      ["Sauce soja, miel, ail","fond de placard (petit format)"],
+      ["Café, huile d'olive, moutarde, vinaigrette","fond de placard"]
+    ],
+    "Crèmerie":[
+      ["Petits suisses","16"],
+      ["Fromage frais à tartiner","≈ 90 g"]
+    ],
+    "Surgelés":[
+      ["Haricots verts surgelés","200 g"],
+      ["Colin surgelé","260 g"],
+      ["Cabillaud surgelé","260 g"]
+    ]
+  },
+  /* ---- Semaine 3 ---- */
+  {
+    "Boucherie / Volaille":[
+      ["Blanc de poulet","≈ 780 g"],
+      ["Escalopes de dinde","≈ 530 g"],
+      ["Bœuf (bavette ou steak, pour le bo bun)","220 g"],
+      ["Jambon blanc","≈ 20 tranches"]
+    ],
+    "Poissonnerie":[
+      ["Truite","280 g"]
+    ],
+    "Fruits & Légumes":[
+      ["Pommes de terre","≈ 900 g"],
+      ["Carottes","200 g"],
+      ["Carottes (à râper pour le bo bun)","150 g"],
+      ["Courgettes","700 g"],
+      ["Brocolis","1 tête (≈ 250 g)"],
+      ["Tomates","6"],
+      ["Concombre","2"],
+      ["Salade","4"],
+      ["Oignon","1"],
+      ["Citron","1"],
+      ["Pommes","7"]
+    ],
+    "Épicerie":[
+      ["Riz (paquet 1 kg)","≈ 250 g utilisés"],
+      ["Pâtes complètes (500 g)","≈ 250 g utilisés"],
+      ["Nouilles de riz","80 g"],
+      ["Thon en boîte","≈ 940 g (6-7 boîtes)"],
+      ["Flocons d'avoine (1 kg)","≈ 160 g"],
+      ["Muesli","≈ 80 g"],
+      ["Pain complet","≈ 6 tranches (congèle le reste)"],
+      ["Amandes","≈ 210 g"],
+      ["Cacahuètes concassées","1 c. à s. (petit sachet)"],
+      ["Protéine en poudre (whey neutre/vanille)","4 doses (≈ 120 g)"],
+      ["Sauce nuoc-mam, citron vert, sucre, ail","fond de placard (petit format)"],
+      ["Café, huile d'olive, moutarde, vinaigrette","fond de placard"]
+    ],
+    "Crèmerie":[
+      ["Petits suisses","16"],
+      ["Fromage frais à tartiner","≈ 90 g"]
+    ],
+    "Surgelés":[
+      ["Haricots verts surgelés","400 g"]
+    ]
+  },
+  /* ---- Semaine 4 ---- */
+  {
+    "Boucherie / Volaille":[
+      ["Blanc de poulet","≈ 750 g"],
+      ["Escalopes de dinde","≈ 500 g"],
+      ["Steak haché 5 %","280 g"],
+      ["Jambon blanc","≈ 17 tranches"]
+    ],
+    "Poissonnerie":[
+      ["Saumon","280 g"]
+    ],
+    "Fruits & Légumes":[
+      ["Pommes de terre","≈ 1,15 kg"],
+      ["Carottes","400 g"],
+      ["Courgettes","700 g"],
+      ["Brocolis","1 tête (≈ 200 g)"],
+      ["Poivron (pour le curry)","200 g"],
+      ["Tomates","6"],
+      ["Concombre","2"],
+      ["Salade","2"],
+      ["Oignon","1"],
+      ["Citron","1"],
+      ["Pommes","7"]
+    ],
+    "Épicerie":[
+      ["Riz (paquet 1 kg)","≈ 250 g utilisés"],
+      ["Pâtes complètes (500 g)","≈ 180 g utilisés"],
+      ["Lentilles vertes","≈ 90 g"],
+      ["Thon en boîte","≈ 940 g (6-7 boîtes)"],
+      ["Flocons d'avoine (1 kg)","≈ 160 g"],
+      ["Muesli","≈ 80 g"],
+      ["Pain complet","≈ 6 tranches (congèle le reste)"],
+      ["Amandes","≈ 210 g"],
+      ["Lait de coco allégé","1 petite boîte (150 ml)"],
+      ["Curry en poudre","1 c. à s. (fond de placard)"],
+      ["Protéine en poudre (whey neutre/vanille)","4 doses (≈ 120 g)"],
+      ["Café, huile d'olive, moutarde, vinaigrette","fond de placard"]
+    ],
+    "Crèmerie":[
+      ["Petits suisses","16"],
+      ["Fromage frais à tartiner","≈ 90 g"]
+    ],
+    "Surgelés":[
+      ["Haricots verts surgelés","200 g"],
+      ["Cabillaud surgelé","260 g"]
+    ]
+  }
+];
 
 /* ==========================================================
    DONNÉES — Batch cooking du dimanche (~45 min, pour 2)
    ========================================================== */
 const BATCH = [
-  ["Lancer les féculents","Riz (600 g) dans une casserole, pâtes complètes (550 g) dans une autre, lentilles (250 g) dans une troisième. Tout cuit pendant que vous faites le reste.","0 → 25 min"],
-  ["Four : poulet & dinde","Blancs de poulet + escalopes de dinde de la semaine (pour 2) sur une grande plaque, filet d'huile, herbes, sel. Four 200 °C.","0 → 25 min"],
-  ["Pommes de terre","≈ 3,5 kg de pommes de terre coupées en morceaux, à l'eau ou à la vapeur. Une partie servira pour la purée.","10 → 30 min"],
+  ["Lancer les féculents","Riz, pâtes complètes et lentilles (selon la semaine) dans des casseroles séparées. Tout cuit pendant que tu fais le reste.","0 → 25 min"],
+  ["Four : poulet, dinde & steak","Blancs de poulet + escalopes de dinde + steaks hachés de la semaine sur une plaque, filet d'huile, herbes, sel. Four 200 °C.","0 → 25 min"],
+  ["Pommes de terre","Pommes de terre coupées en morceaux, à l'eau ou à la vapeur. Une partie servira pour la purée.","10 → 30 min"],
   ["Légumes vapeur","Brocolis, carottes en rondelles et haricots verts, à la vapeur ou à la poêle (croquants, ils se réchauffent mieux).","25 → 40 min"],
-  ["Portionner","Répartir dans des boîtes en respectant les 2 tailles de portions : boîtes 👨 et boîtes 👩 (un coup de feutre suffit). 3-4 jours au frigo, le reste au congélateur.","40 → 45 min"]
+  ["Portionner viande & légumes","Répartir dans des boîtes individuelles (un coup de feutre pour la date suffit). 3-4 jours au frigo, le reste au congélateur.","40 → 45 min"],
+  ["Poisson : à part, le jour même","Saumon, truite, colin ou cabillaud se cuisinent frais le jour J (poêle ou four, 8-10 min) — ils ne se batch-cook pas bien à l'avance. Si tu veux avancer, tu peux les cuire la veille au soir seulement.","le jour même"]
 ];
 
 /* ==========================================================
    DONNÉES — Budget estimé par semaine (2 personnes)
    ========================================================== */
 const BUDGET = [
-  ["Boucherie / volaille (poulet, dinde, steak, jambon)","≈ 28 €"],
-  ["Fruits & légumes","≈ 18 €"],
-  ["Épicerie (riz, pâtes, lentilles, thon, avoine, sauce)","≈ 14 €"],
-  ["Crèmerie (petits suisses, fromage blanc, fromage frais)","≈ 10 €"],
-  ["Surgelés (haricots verts, colin 1 semaine sur 2)","≈ 5-8 €"]
+  ["Boucherie / volaille (poulet, dinde, steak, jambon)","≈ 20-22 €"],
+  ["Poissonnerie / Surgelés poisson (saumon, truite, colin, cabillaud)","≈ 6-9 €"],
+  ["Fruits & légumes","≈ 10 €"],
+  ["Épicerie (riz, pâtes, lentilles, thon, avoine, sauce)","≈ 10 €"],
+  ["Crèmerie (petits suisses, fromage frais)","≈ 6 €"],
+  ["Protéine en poudre (whey)","≈ 5 €"],
+  ["Surgelés légumes (haricots verts)","≈ 2 €"]
 ];
 
 /* ==========================================================
    ÉTAT — sauvegarde localStorage
    state.checks : { "s0d1m2": true }
-   state.suivi  : { a:[{poids,taille,note}×4], b:[…×4] }  (a = 👨, b = 👩)
+   state.suivi  : { a:[{poids,taille,note}×4] }
    ========================================================== */
 const KEY = "planAlimentaireV1";
-let state = {checks:{}, suivi:{a:[{},{},{},{}], b:[{},{},{},{}]}};
+let state = {checks:{}, suivi:{a:[{},{},{},{}], b:[{},{},{},{}]}, rotation:0};
 try{
   const saved = JSON.parse(localStorage.getItem(KEY));
   if(saved){
@@ -534,18 +678,17 @@ try{
     /* Migration : l'ancienne version stockait le suivi sous forme de tableau simple */
     if(Array.isArray(saved.suivi)) state.suivi.a = saved.suivi;
     else if(saved.suivi) state.suivi = Object.assign(state.suivi, saved.suivi);
+    if(Number.isInteger(saved.rotation) && saved.rotation>=0 && saved.rotation<NB_ROTATIONS) state.rotation = saved.rotation;
   }
 }catch(e){ /* localStorage indisponible : le site marche quand même, sans sauvegarde */ }
-
-/* Pont vers le module Firebase tout en bas du fichier */
-window.getState = () => state;
-window.setState = (s) => { state = s; };
-window.onSave = null;
-
 function save(){
   try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
-  if(window.onSave) window.onSave(state);
 }
+
+/* Semaines/courses actives, dérivées de la rotation en cours */
+let SEMAINES = buildSemaines(state.rotation);
+let LISTES = buildListes(state.rotation);
+
 </script>
 <script>
 /* ==========================================================
@@ -563,47 +706,46 @@ const PAGES = [
   {id:"suivi",label:"📈 Suivi"}
 ];
 
-/* Calories totales d'un jour : [👨, 👩] (hors repas plaisir) */
+/* Calories totales d'un jour (hors repas plaisir) */
 function kcalJour(mealIds){
-  return mealIds.reduce((t,id)=>{
-    if(id==="l_plaisir") return t;
-    return [t[0]+MEALS[id].kcal[0], t[1]+MEALS[id].kcal[1]];
-  },[0,0]);
+  return mealIds.reduce((t,id)=> id==="l_plaisir" ? t : t+MEALS[id].kcal, 0);
 }
 
 /* --- Page Accueil --- */
 function pageAccueil(){
   return `
   <section class="card">
-    <h2><span class="dot">●</span> Objectifs du duo</h2>
-    <p>Mêmes repas pour les deux — seules les <b>quantités changent</b> (👨 / 👩 sur chaque ingrédient). Une seule liste de courses, un seul batch cooking.</p>
+    <h2><span class="dot">●</span> Tes objectifs</h2>
     <div class="stats">
-      <div class="stat"><b>👨 105 kg</b><small>→ objectif 85-90 kg</small></div>
-      <div class="stat"><b>👨 ≈ 1 700</b><small>kcal / jour</small></div>
-      <div class="stat blue"><b>Mar · Jeu</b><small>Handball 🤾</small></div>
-      <div class="stat"><b>👩 60 kg</b><small>→ objectif 57 kg</small></div>
-      <div class="stat"><b>👩 ≈ 1 450</b><small>kcal / jour</small></div>
-      <div class="stat blue"><b>8 000 pas</b><small>+ séances 👩</small></div>
-      <div class="stat"><b>75-85 €</b><small>Budget / semaine à 2</small></div>
+      <div class="stat"><b>99 kg</b><small>→ objectif 85-90 kg</small></div>
+      <div class="stat"><b>≈ 1 900-2 000</b><small>kcal / jour</small></div>
+      <div class="stat"><b>≈ 120-140 g</b><small>protéines / jour</small></div>
+      <div class="stat"><b>Dès lundi</b><small>Kiné 🦵 (post-méniscectomie)</small></div>
+      <div class="stat"><b>≈ 58-61 €</b><small>Budget / semaine</small></div>
     </div>
-    <div class="warn">⚠️ <span><b>👨</b> vise ~0,5-1 kg/semaine (déficit marqué). <b>👩</b> n'a que 3 kg à perdre : le déficit est volontairement doux — si elle a faim, elle ajoute un fruit ou un yaourt sans culpabiliser. Les soirs de handball, seul <b>👨</b> saute le dîner : <b>👩</b> mange normalement.</span></div>
+    <div class="warn">⚠️ <span>Plan remonté en protéines (viande, poisson, un peu de whey) pour préserver le muscle pendant la perte de poids — les calories remontent un peu avec, c'est normal.</span></div>
+  </section>
+  <section class="card">
+    <h2><span class="dot">●</span> Rotation de menus</h2>
+    <p class="muted">Rotation <b>${state.rotation+1}/${NB_ROTATIONS}</b> en cours. Au bout de 4 semaines, change de rotation pour repartir sur un enchaînement différent des mêmes repas équilibrés — sans avoir à redemander un nouveau plan.</p>
+    <button class="btn primary" data-rotate="1">🔄 Passer à la rotation suivante</button>
   </section>
   <section class="card">
     <h2><span class="dot">●</span> Comment ça marche</h2>
     <p class="muted">
-      • <b>Petit-déjeuner 👨</b> : toujours identique (café, 2 petits suisses, 60 g d'avoine). <b>👩</b> : il varie chaque jour, sans flocons d'avoine — œufs 🍳 le mardi et le vendredi, tartines salées le mercredi et le samedi, sucré les autres jours. Les jours sont interchangeables.<br>
-      • <b>1 déjeuner par semaine 🐟</b> : <b>👩</b> remplace le poulet par du colin (assiette riz-brocolis) — <b>👨</b> garde le poulet, rien ne change pour lui.<br>
-      • <b>👩 ne mange pas de porc</b> : partout où il y a du jambon, elle prend du jambon de dinde.<br>
-      • <b>Mardi & jeudi</b> (handball 👨, en bleu) : <b>👨</b> collation renforcée vers 16 h puis dîner léger (yaourt si faim). <b>👩</b> ne fait pas de hand : collation normale et <b>vrai dîner</b> le soir.<br>
-      • <b>Samedi midi</b> : repas plaisir 🎉 pour les deux — totalement libre.<br>
-      • <b>Dimanche</b> : batch cooking de 45 min qui prépare presque toute la semaine pour 2.<br>
-      • Cochez chaque repas terminé : il devient vert et tout est sauvegardé automatiquement.<br>
+      • <b>Petit-déjeuner</b> : alterne un jour sur deux entre avoine/muesli + petits suisses, et pain complet + jambon + fromage frais à tartiner + shake protéiné.<br>
+      • <b>Poisson</b> : saumon, truite, colin ou cabillaud reviennent 1 à 2 fois par semaine pour varier les protéines.<br>
+      • <b>Handball en pause</b> le temps de la récupération (méniscectomie) — repas normaux tous les jours.<br>
+      • <b>Samedi midi</b> : repas plaisir 🎉 — totalement libre.<br>
+      • <b>Samedi soir</b> : un plat un peu plus élaboré, saveurs asiatiques 🥢 — différent chaque semaine (poulet sauté, saumon teriyaki, bo bun, curry).<br>
+      • <b>Dimanche</b> : batch cooking de ~45 min qui prépare presque toute la semaine (le poisson se cuisine à part, le jour même).<br>
+      • Coche chaque repas terminé : il devient vert et tout est sauvegardé automatiquement.<br>
       • Les repas marqués <b>10 min*</b> se réchauffent en 10 min grâce au batch cooking.
     </p>
   </section>
   <section class="card">
     <h2>💾 Sauvegarde</h2>
-    <p class="muted">Vos coches et votre suivi sont enregistrés automatiquement <b>sur cet appareil</b>. Pour partager ou sécuriser vos données : exportez le fichier de sauvegarde et importez-le sur l'autre téléphone (ou gardez-le dans un cloud type Drive).</p>
+    <p class="muted">Tes coches et ton suivi sont enregistrés automatiquement <b>sur cet appareil</b>. Pour partager ou sécuriser tes données : exporte le fichier de sauvegarde et importe-le sur un autre appareil (ou garde-le dans un cloud type Drive).</p>
     <button class="btn primary" id="btnExport">⬇️ Exporter la sauvegarde</button>
     <button class="btn" id="btnImport">⬆️ Importer une sauvegarde</button>
     <input type="file" id="fileImport" accept=".json" hidden>
@@ -615,48 +757,17 @@ function pageAccueil(){
   </section>`;
 }
 
-/* --- Un ingrédient : affiche 1 ou 2 quantités --- */
+/* --- Un ingrédient --- */
 function ingHTML(i){
-  if(i.length===3 && i[1]!==i[2])
-    return `<li>${i[0]} — <b>${i[1]}</b> 👨 · <b>${i[2]}</b> 👩</li>`;
   return `<li>${i[0]} — <b>${i[1]}</b></li>`;
 }
-
-/* Petit-déjeuner de 👨, fixe tous les jours */
-const PDJ_LUI = [["Café noir","1 tasse"],["Petits suisses","2"],["Flocons d'avoine","60 g"]];
 
 /* --- Un repas --- */
 function mealHTML(w,d,m,id){
   const meal = MEALS[id];
   const key = `s${w}d${d}m${m}`;
   const checked = state.checks[key] ? "checked" : "";
-  const kc = id==="l_plaisir" ? "~1000 👨 · ~800 👩"
-           : meal.kcal[0]===meal.kcal[1] ? meal.kcal[0]
-           : `${meal.kcal[0]} 👨 · ${meal.kcal[1]} 👩`;
-
-  /* Cas spécial : repas "duo" (jours handball) — deux versions côte à côte */
-  const contenu = meal.duo ? `
-      <div class="pdj-split">
-        <div><b>👨 ${meal.lui.nom}</b>
-          <ul>${meal.lui.ing.map(i=>`<li>${i[0]} — <b>${i[1]}</b></li>`).join("")}</ul>
-        </div>
-        <div><b>👩 ${meal.elle.nom}</b>
-          <ul>${meal.elle.ing.map(i=>`<li>${i[0]} — <b>${i[1]}</b></li>`).join("")}</ul>
-        </div>
-      </div>` :
-  /* Cas spécial : le petit-déjeuner affiche les deux versions côte à côte */
-  id.startsWith("pdj") ? `
-      <div class="meal-name">Petit-déjeuner</div>
-      <div class="pdj-split">
-        <div><b>👨 Classique (toujours pareil)</b>
-          <ul>${PDJ_LUI.map(i=>`<li>${i[0]} — <b>${i[1]}</b></li>`).join("")}</ul>
-        </div>
-        <div><b>👩 ${meal.elle.nom}</b>
-          <ul>${meal.elle.ing.map(i=>`<li>${i[0]} — <b>${i[1]}</b></li>`).join("")}</ul>
-        </div>
-      </div>` : `
-      <div class="meal-name">${meal.nom}</div>
-      <ul>${meal.ing.map(ingHTML).join("")}</ul>`;
+  const kc = id==="l_plaisir" ? "~1000" : meal.kcal;
 
   return `
   <div class="meal ${checked?'checked':''}" id="card-${key}">
@@ -664,7 +775,8 @@ function mealHTML(w,d,m,id){
            aria-label="Marquer ${TYPES[m]} comme terminé">
     <div class="meal-info">
       <div class="meal-type">${TYPES[m]}</div>
-      ${contenu}
+      <div class="meal-name">${meal.nom}</div>
+      <ul>${meal.ing.map(ingHTML).join("")}</ul>
       <div class="meal-meta"><span>🔥 ${kc} kcal</span><span>⏱ ${meal.tps}</span></div>
     </div>
   </div>`;
@@ -675,7 +787,6 @@ function pageSemaine(w){
   let html = `
   <section class="card">
     <h2><span class="dot">●</span> Semaine ${w+1}</h2>
-    <p class="muted">Quantités : <b>👨</b> lui · <b>👩</b> elle — quand une seule quantité est indiquée, elle vaut pour les deux.</p>
     <div class="progress-label"><span>Progression de la semaine</span><span id="wpct-${w}">0 %</span></div>
     <div class="progress"><div id="wbar-${w}"></div></div>
     <div class="celebrate" id="wmsg-${w}">🏆 Semaine terminée !</div>
@@ -687,7 +798,7 @@ function pageSemaine(w){
     <div class="day ${hb?'handball':''}" id="day-${w}-${d}">
       <button class="day-head" data-toggle="${w}-${d}" aria-expanded="false">
         <span class="day-name">${JOURS[d]}${hb?'<span class="badge-hb">🤾 Handball</span>':''}</span>
-        <span class="kcal">👨 ≈${kj[0]} · 👩 ≈${kj[1]} kcal${meals.includes("l_plaisir")?" + 🎉":""}</span>
+        <span class="kcal">≈${kj} kcal${meals.includes("l_plaisir")?" + 🎉":""}</span>
         <span class="chev">▼</span>
       </button>
       <div class="day-prog-wrap">
@@ -704,8 +815,8 @@ function pageSemaine(w){
 
 /* --- Listes de courses --- */
 function pageCourses(){
-  let html = `<section class="card"><h2><span class="dot">●</span> Listes de courses <span class="muted">(pour 2 personnes)</span></h2>
-  <p class="muted">Classées par rayons. Les semaines partagent volontairement les mêmes ingrédients pour réduire le budget : certains paquets (riz, avoine, huile) durent plusieurs semaines.</p></section>`;
+  let html = `<section class="card"><h2><span class="dot">●</span> Listes de courses</h2>
+  <p class="muted">Classées par rayons, recalculées pour toi à partir des repas réels de chaque semaine.</p></section>`;
   LISTES.forEach((liste,w)=>{
     html += `<section class="card"><h2>🛒 Semaine ${w+1}</h2>`;
     for(const [rayon,items] of Object.entries(liste)){
@@ -715,13 +826,12 @@ function pageCourses(){
     }
     html += `</section>`;
   });
-  html += `<section class="card"><h2>💶 Budget estimé par semaine (2 personnes)</h2>
+  html += `<section class="card"><h2>💶 Budget estimé par semaine</h2>
     <ul class="rayon" style="list-style:none">` +
     BUDGET.map(b=>`<li style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--border)"><span>${b[0]}</span><b>${b[1]}</b></li>`).join("") +
     `</ul>
     <div class="stats" style="margin-top:14px">
-      <div class="stat"><b>≈ 75-78 €</b><small>Total / semaine à 2</small></div>
-      <div class="stat"><b>≈ 37-39 €</b><small>Soit par personne</small></div>
+      <div class="stat"><b>≈ 58-61 €</b><small>Total / semaine</small></div>
     </div>
     <div class="warn">⚠️ <span>Estimation en supermarché discount / marques distributeur. Le repas plaisir du samedi n'est pas compté.</span></div>
   </section>`;
@@ -731,18 +841,18 @@ function pageCourses(){
 /* --- Batch cooking --- */
 function pageBatch(){
   return `<section class="card">
-    <h2>🍳 Batch cooking du dimanche <span class="muted">(~45 min, pour 2)</span></h2>
-    <p class="muted">Une seule session de cuisine prépare les féculents, viandes et légumes de la semaine pour vous deux. Ensuite, chaque repas = assembler + réchauffer en moins de 10 minutes.</p>
+    <h2>🍳 Batch cooking du dimanche <span class="muted">(~30-35 min)</span></h2>
+    <p class="muted">Une seule session de cuisine prépare les féculents, viandes et légumes de la semaine. Ensuite, chaque repas = assembler + réchauffer en moins de 10 minutes.</p>
     ${BATCH.map((s,i)=>`
     <div class="step">
       <div class="num">${i+1}</div>
       <div><b>${s[0]}</b><span>${s[1]}</span><br><small>⏱ ${s[2]}</small></div>
     </div>`).join("")}
-    <div class="warn">⚠️ <span>Conservation : 3-4 jours max au réfrigérateur dans des boîtes fermées. Congelez les portions de jeudi/vendredi et sortez-les la veille.</span></div>
+    <div class="warn">⚠️ <span>Conservation : 3-4 jours max au réfrigérateur dans des boîtes fermées. Congèle les portions de jeudi/vendredi et sors-les la veille.</span></div>
   </section>`;
 }
 
-/* --- Tableau de suivi (👨 puis 👩) --- */
+/* --- Tableau de suivi --- */
 function tableSuivi(qui,label,placeholder){
   let rows = "";
   for(let w=0; w<4; w++){
@@ -763,10 +873,8 @@ function tableSuivi(qui,label,placeholder){
 function pageSuivi(){
   return `<section class="card">
     <h2>📈 Tableau de suivi</h2>
-    <p class="muted">Pesez-vous une fois par semaine, le même jour, le matin à jeun. Tout est sauvegardé automatiquement sur cet appareil.</p>
-    ${tableSuivi("a","👨 Lui","Énergie, faim, handball…")}
-    <div style="height:18px"></div>
-    ${tableSuivi("b","👩 Elle","Énergie, faim, séances…")}
+    <p class="muted">Pèse-toi une fois par semaine, le même jour, le matin à jeun. Tout est sauvegardé automatiquement sur cet appareil.</p>
+    ${tableSuivi("a","Suivi","Énergie, faim, handball…")}
     <div class="stats" style="margin-top:16px" id="suiviStats"></div>
   </section>`;
 }
@@ -774,53 +882,24 @@ function pageSuivi(){
 /* ==========================================================
    CONSTRUCTION DU DOM
    ========================================================== */
-/* Construit (ou reconstruit) tout le site à partir de l'état courant.
-   Appelée par le module Firebase tout en bas, une fois les données
-   chargées (ou immédiatement en mode secours si Firebase est indisponible). */
-window.startApp = function(){
-  /* Mémorise l'onglet actif et les jours dépliés avant de tout
-     reconstruire, pour ne pas perturber l'autre personne quand une
-     mise à jour distante arrive pendant qu'elle consulte la page */
-  const activeBtn = nav.querySelector("button.active");
-  const currentPageId = activeBtn ? activeBtn.dataset.page : PAGES[0].id;
-  const openDayIds = Array.from(main.querySelectorAll(".day.open")).map(d=>d.id);
+PAGES.forEach((p,i)=>{
+  const b = document.createElement("button");
+  b.textContent = p.label;
+  b.dataset.page = p.id;
+  if(i===0) b.classList.add("active");
+  nav.appendChild(b);
 
-  nav.innerHTML = "";
-  main.innerHTML = "";
+  const sec = document.createElement("div");
+  sec.className = "page" + (i===0?" visible":"");
+  sec.id = "page-" + p.id;
+  main.appendChild(sec);
+});
 
-  PAGES.forEach((p)=>{
-    const isActive = p.id === currentPageId;
-    const b = document.createElement("button");
-    b.textContent = p.label;
-    b.dataset.page = p.id;
-    if(isActive) b.classList.add("active");
-    nav.appendChild(b);
-
-    const sec = document.createElement("div");
-    sec.className = "page" + (isActive?" visible":"");
-    sec.id = "page-" + p.id;
-    main.appendChild(sec);
-  });
-
-  document.getElementById("page-accueil").innerHTML = pageAccueil();
-  for(let w=0; w<4; w++) document.getElementById("page-s"+w).innerHTML = pageSemaine(w);
-  document.getElementById("page-courses").innerHTML = pageCourses();
-  document.getElementById("page-batch").innerHTML = pageBatch();
-  document.getElementById("page-suivi").innerHTML = pageSuivi();
-
-  for(let w=0;w<4;w++) for(let d=0;d<7;d++) refresh(w,d);
-  majSuivi();
-
-  openDayIds.forEach(id=>{
-    const day = document.getElementById(id);
-    if(!day) return;
-    const head = day.querySelector("[data-toggle]");
-    const body = day.querySelector(".day-body");
-    day.classList.add("open");
-    if(head) head.setAttribute("aria-expanded", true);
-    if(body) body.style.maxHeight = body.scrollHeight + "px";
-  });
-};
+document.getElementById("page-accueil").innerHTML = pageAccueil();
+for(let w=0; w<4; w++) document.getElementById("page-s"+w).innerHTML = pageSemaine(w);
+document.getElementById("page-courses").innerHTML = pageCourses();
+document.getElementById("page-batch").innerHTML = pageBatch();
+document.getElementById("page-suivi").innerHTML = pageSuivi();
 
 /* ==========================================================
    INTERACTIONS
@@ -833,6 +912,24 @@ nav.addEventListener("click",e=>{
   nav.querySelectorAll("button").forEach(b=>b.classList.toggle("active",b===btn));
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("visible"));
   document.getElementById("page-"+btn.dataset.page).classList.add("visible");
+  window.scrollTo({top:0});
+});
+
+/* Changer de rotation de menus */
+main.addEventListener("click",e=>{
+  const btn = e.target.closest("[data-rotate]");
+  if(!btn) return;
+  const ok = confirm("Passer à la rotation suivante ? Tes coches de progression seront réinitialisées (ton suivi de poids est conservé).");
+  if(!ok) return;
+  state.rotation = (state.rotation+1) % NB_ROTATIONS;
+  state.checks = {};
+  save();
+  SEMAINES = buildSemaines(state.rotation);
+  LISTES = buildListes(state.rotation);
+  document.getElementById("page-accueil").innerHTML = pageAccueil();
+  for(let w=0; w<4; w++) document.getElementById("page-s"+w).innerHTML = pageSemaine(w);
+  document.getElementById("page-courses").innerHTML = pageCourses();
+  for(let w=0;w<4;w++) for(let d=0;d<7;d++) refresh(w,d);
   window.scrollTo({top:0});
 });
 
@@ -917,7 +1014,7 @@ function statPerte(qui,depart,objectif,emoji){
 }
 function majSuivi(){
   document.getElementById("suiviStats").innerHTML =
-    statPerte("a",105,87.5,"👨") + statPerte("b",60,57,"👩");
+    statPerte("a",105,87.5,"⚖️");
 }
 
 /* ==========================================================
@@ -943,7 +1040,7 @@ document.getElementById("fileImport").addEventListener("change",e=>{
     try{
       const data = JSON.parse(r.result);
       if(!data.checks && !data.suivi) throw new Error("format");
-      state = Object.assign({checks:{},suivi:{a:[{},{},{},{}],b:[{},{},{},{}]}}, data);
+      state = Object.assign({checks:{},suivi:{a:[{},{},{},{}],b:[{},{},{},{}]},rotation:0}, data);
       save();
       location.reload(); /* recharge la page avec les données importées */
     }catch(err){
@@ -953,111 +1050,16 @@ document.getElementById("fileImport").addEventListener("change",e=>{
   r.readAsText(f);
 });
 
+/* Initialisation : appliquer l'état sauvegardé */
+for(let w=0;w<4;w++) for(let d=0;d<7;d++) refresh(w,d);
+majSuivi();
 </script>
-
-<script type="module">
-/* ==========================================================
-   FIREBASE — sauvegarde partagée entre vous deux
-   ==========================================================
-   1. Crée un projet sur https://console.firebase.google.com
-   2. Active "Firestore Database" (mode production) et "Authentication"
-      → méthode "E-mail/Mot de passe"
-   3. Dans Authentication > Users, crée VOS DEUX comptes (email + mot de passe)
-   4. Colle ta config ci-dessous (Paramètres du projet > Général > Vos applications > SDK config)
-   5. Dans Firestore > Règles, colle :
-      rules_version = '2';
-      service cloud.firestore {
-        match /databases/{database}/documents {
-          match /planAlimentaire/{doc} {
-            allow read, write: if request.auth != null;
-          }
-        }
-      }
-   ========================================================== */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-import {
-  getAuth, signInWithEmailAndPassword, onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-import {
-  getFirestore, doc, getDoc, setDoc, onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyASHeya2o-lZsheKstjwevjv2H4LuvhJQo",
-  authDomain: "menuraph-a3311.firebaseapp.com",
-  projectId: "menuraph-a3311",
-  storageBucket: "menuraph-a3311.firebasestorage.app",
-  messagingSenderId: "1050675498232",
-  appId: "1:1050675498232:web:20a7c4c8c5692f6c3fbf0d",
-  measurementId: "G-1900FRX53H"
-};
-
-const loginGate = document.getElementById("loginGate");
-const loginForm = document.getElementById("loginForm");
-const loginStatus = document.getElementById("loginStatus");
-
-const sessionId = Math.random().toString(36).slice(2);
-let firestoreReady = false;
-
-function demarrerEnModeSecours(msg){
-  loginGate.style.display = "none";
-  if(msg) console.warn(msg);
-  window.startApp();
-}
-
-try{
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const ref = doc(db, "planAlimentaire", "etat");
-
-  loginForm.addEventListener("submit", async (e)=>{
-    e.preventDefault();
-    loginStatus.textContent = "Connexion...";
-    try{
-      await signInWithEmailAndPassword(
-        auth,
-        document.getElementById("loginEmail").value.trim(),
-        document.getElementById("loginPass").value
-      );
-    }catch(err){
-      loginStatus.textContent = "Email ou mot de passe incorrect.";
-    }
+<script>
+/* Enregistrement du service worker : rend le site installable et utilisable hors connexion */
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").catch(err=>console.warn("SW non enregistré :", err));
   });
-
-  onAuthStateChanged(auth, async (user)=>{
-    if(!user){
-      loginGate.style.display = "flex";
-      return;
-    }
-    loginGate.style.display = "none";
-
-    if(!firestoreReady){
-      firestoreReady = true;
-
-      window.onSave = (s)=>{
-        setDoc(ref, Object.assign({}, s, {_by: sessionId})).catch(console.error);
-      };
-
-      const snap = await getDoc(ref);
-      if(snap.exists()){
-        window.setState(snap.data());
-      }else{
-        await setDoc(ref, Object.assign({}, window.getState(), {_by: sessionId}));
-      }
-      window.startApp();
-
-      onSnapshot(ref, (snap)=>{
-        if(!snap.exists()) return;
-        const data = snap.data();
-        if(data._by === sessionId) return;
-        window.setState(data);
-        window.startApp();
-      });
-    }
-  });
-}catch(err){
-  demarrerEnModeSecours("Firebase indisponible, mode local uniquement : " + err.message);
 }
 </script>
 </body>
